@@ -9,7 +9,7 @@ module-transfer/portability tests — reported in the accompanying manuscript.
 
 ## Repository status
 
-The author-approved submission snapshot is frozen under `manuscript/` and
+The submission snapshot is frozen under `manuscript/` and
 `figures/assembled/`, with four main figures and ten supplementary figures.
 Supplementary numbering is final as Figure S1–S10 and is recorded in
 `MANIFEST.tsv`. `manuscript/SUBMISSION_SNAPSHOT_SHA256.tsv` provides the
