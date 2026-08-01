@@ -1,0 +1,25 @@
+# Local/public inputs
+data/raw/
+data/downloads/
+
+# Large model outputs and caches
+outputs/predictions/
+outputs/cache/
+zenodo/upload/
+*.npy
+*.npz
+*.pkl
+
+# Environment and editor state
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Temporary figure products
+figures/rendered/*.png
+figures/rendered/*.pdf
+!figures/rendered/.gitkeep
+!figures/rendered/Figure1B.pdf
+!figures/rendered/Figure1C.pdf

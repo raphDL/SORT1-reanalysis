@@ -1,0 +1,19 @@
+{
+  "title": "Benchmarking AlphaGenome through a reanalysis of the 1p13 SORT1 cholesterol locus: derived analysis tables",
+  "upload_type": "dataset",
+  "description": "Four large derived AlphaGenome output tables supporting Figures 3A, 4H and 4J. File identities, sizes, SHA-256 digests and regeneration scripts are recorded in the accompanying SORT1-reanalysis repository.",
+  "creators": [
+    {"name": "Mompó Gisbert, Lucía"},
+    {"name": "Kalla, Victoria"},
+    {"name": "Riedmayr, Lisa M."},
+    {"name": "Ferreira, Raphael"}
+  ],
+  "keywords": [
+    "AlphaGenome",
+    "SORT1",
+    "rs12740374",
+    "regulatory genomics",
+    "sequence-to-function"
+  ],
+  "notes": "Access-right and license fields must be set only after AlphaGenome prediction-redistribution terms are confirmed."
+}

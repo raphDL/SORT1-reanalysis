@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="214.68428pt" height="118.956157pt" viewBox="0 0 214.68428 118.956157" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-07-30T22:23:29.200350</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.1, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 118.956157 
+L 214.68428 118.956157 
+L 214.68428 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 71.414062 91.886938 
+L 200.581685 91.886938 
+L 200.581685 25.40445 
+L 71.414062 25.40445 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 71.414062 28.426381 
+L 170.273774 28.426381 
+L 170.273774 88.865007 
+L 71.414062 88.865007 
+z
+" clip-path="url(#p560c65fbc7)" style="fill: #d0d0d0"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 170.273774 28.426381 
+L 173.037696 28.426381 
+L 173.037696 88.865007 
+L 170.273774 88.865007 
+z
+" clip-path="url(#p560c65fbc7)" style="fill: #4e79a7"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 173.037696 28.426381 
+L 173.120852 28.426381 
+L 173.120852 88.865007 
+L 173.037696 88.865007 
+z
+" clip-path="url(#p560c65fbc7)" style="fill: #e15759"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path id="mc74a9a3cae" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#mc74a9a3cae" x="71.414062" y="91.886938" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-size: 7px; font-family: 'Arial'; text-anchor: middle" x="71.414062" y="103.897407" transform="rotate(-0 71.414062 103.897407)">0</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2">
+      <g>
+       <use xlink:href="#mc74a9a3cae" x="111.0118" y="91.886938" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-size: 7px; font-family: 'Arial'; text-anchor: middle" x="111.0118" y="103.897407" transform="rotate(-0 111.0118 103.897407)">20</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3">
+      <g>
+       <use xlink:href="#mc74a9a3cae" x="150.609538" y="91.886938" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-size: 7px; font-family: 'Arial'; text-anchor: middle" x="150.609538" y="103.897407" transform="rotate(-0 150.609538 103.897407)">40</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#mc74a9a3cae" x="190.207275" y="91.886938" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-size: 7px; font-family: 'Arial'; text-anchor: middle" x="190.207275" y="103.897407" transform="rotate(-0 190.207275 103.897407)">60</text>
+     </g>
+    </g>
+    <g id="text_5">
+     <text style="font-size: 8px; font-family: 'Arial'; text-anchor: middle" x="135.997874" y="115.112407" transform="rotate(-0 135.997874 115.112407)">Sequencing reads (×10³)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_5">
+      <defs>
+       <path id="me82c285a6b" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#me82c285a6b" x="71.414062" y="58.645694" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="font-size: 7px; font-family: 'Arial'; text-anchor: end" x="64.414062" y="61.150928" transform="rotate(-0 64.414062 61.150928)">Human hepatocytes</text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_6">
+    <path d="M 71.414062 91.886938 
+L 71.414062 25.40445 
+" style="fill: none; stroke: #000000; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 71.414062 91.886938 
+L 200.581685 91.886938 
+" style="fill: none; stroke: #000000; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 6.3px; font-family: 'Arial'" transform="translate(175.496716 56.942627)">51,370 total</text>
+    <text style="font-size: 6.3px; font-family: 'Arial'" transform="translate(175.496716 63.606058)">2.8% indel</text>
+   </g>
+   <g id="legend_1">
+    <g id="patch_8">
+     <path d="M 61.951467 9.157281 
+L 68.771467 9.157281 
+L 68.771467 4.817281 
+L 61.951467 4.817281 
+z
+" style="fill: #d0d0d0"/>
+    </g>
+    <g id="text_8">
+     <text style="font-size: 6.2px; font-family: 'Arial'; text-anchor: start" x="73.731467" y="9.157281" transform="rotate(-0 73.731467 9.157281)">Unedited reads</text>
+    </g>
+    <g id="patch_9">
+     <path d="M 61.951467 17.927375 
+L 68.771467 17.927375 
+L 68.771467 13.587375 
+L 61.951467 13.587375 
+z
+" style="fill: #4e79a7"/>
+    </g>
+    <g id="text_9">
+     <text style="font-size: 6.2px; font-family: 'Arial'; text-anchor: start" x="73.731467" y="17.927375" transform="rotate(-0 73.731467 17.927375)">Modeled simple indels</text>
+    </g>
+    <g id="patch_10">
+     <path d="M 140.03078 9.157281 
+L 146.85078 9.157281 
+L 146.85078 4.817281 
+L 140.03078 4.817281 
+z
+" style="fill: #e15759"/>
+    </g>
+    <g id="text_10">
+     <text style="font-size: 6.2px; font-family: 'Arial'; text-anchor: start" x="151.81078" y="9.157281" transform="rotate(-0 151.81078 9.157281)">Other/complex indels</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p560c65fbc7">
+   <rect x="71.414062" y="25.40445" width="129.167622" height="66.482488"/>
+  </clipPath>
+ </defs>
+</svg>

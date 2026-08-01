@@ -1,0 +1,62 @@
+{
+  "data_sha256": "fec2eed91fe27af3aae07ebce2eca65e9bad4bb6abba5d8c27f478887dd7b134",
+  "unique_elements": 6,
+  "element_modality_pairs": 10,
+  "substitutions_total": 13147,
+  "random_effects_by_modality": {
+    "ATAC": {
+      "k_elements": 4,
+      "pooled_spearman_rho": 0.5313265961832118,
+      "pooled_95ci_low": 0.3957346508726986,
+      "pooled_95ci_high": 0.6442479268174567,
+      "tau2_fisher_z": 0.030442666633124393,
+      "Q": 113.54191766436647,
+      "Q_df": 3,
+      "Q_p": 1.896617251190778e-24,
+      "I2_percent": 97.35780400603406
+    },
+    "DNASE": {
+      "k_elements": 6,
+      "pooled_spearman_rho": 0.4186408547040226,
+      "pooled_95ci_low": 0.16589829515768836,
+      "pooled_95ci_high": 0.6197751606321213,
+      "tau2_fisher_z": 0.12042998009220787,
+      "Q": 810.1705684493782,
+      "Q_df": 5,
+      "Q_p": 7.294357184301982e-173,
+      "I2_percent": 99.38284600864115
+    }
+  },
+  "matched_four_random_effects_by_modality": {
+    "DNASE": {
+      "k_elements": 4,
+      "pooled_spearman_rho": 0.5476885658184164,
+      "pooled_95ci_low": 0.37632563215780374,
+      "pooled_95ci_high": 0.6828180595305617,
+      "tau2_fisher_z": 0.04920700835524211,
+      "Q": 181.67807481084338,
+      "Q_df": 3,
+      "Q_p": 3.828861577993786e-39,
+      "I2_percent": 98.34872754837176
+    },
+    "ATAC": {
+      "k_elements": 4,
+      "pooled_spearman_rho": 0.5313265961832118,
+      "pooled_95ci_low": 0.3957346508726986,
+      "pooled_95ci_high": 0.6442479268174567,
+      "tau2_fisher_z": 0.030442666633124393,
+      "Q": 113.54191766436647,
+      "Q_df": 3,
+      "Q_p": 1.896617251190778e-24,
+      "I2_percent": 97.35780400603406
+    }
+  },
+  "matched_four_elements": [
+    "F9",
+    "LDLR",
+    "PKLR",
+    "SORT1"
+  ],
+  "median_element_spearman": 0.47518636344476883,
+  "positive_element_correlations": 10
+}

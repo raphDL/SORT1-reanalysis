@@ -1,0 +1,22 @@
+{
+  "frozen_version": "v1",
+  "created_utc": "2026-07-30T09:24:52.035771+00:00",
+  "source_live_table": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_distal_hic_transfer/results/chr1_distal_315_transfer_robustness/primary_robustness_table.tsv",
+  "source_live_table_sha256_at_freeze": "6f148e4fdbb548c95ed2f99b6f138122cfeff7a372b9f1f101db0d3023a91d3c",
+  "frozen_promoter_table": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_distal_hic_transfer/main_figure4_panels/frozen_v1/Figure4EF_frozen_promoter_table_v1.tsv",
+  "frozen_promoter_table_sha256": "30c42f08509ac98789d45025a8973dfbd8235222f890f506c1bc357a653c9967",
+  "summary_table": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_distal_hic_transfer/main_figure4_panels/frozen_v1/Figure4EF_frozen_results_v1.tsv",
+  "summary_table_sha256": "3d5e39e457f73d46ff9e0ebc39cd4aa16a686a90024930351ebc51183d6d87be",
+  "random_seed": 12740374,
+  "cluster_bootstraps": 5000,
+  "panel_E": {
+    "population": "774 input-QC-passing promoters with all three replacement sites 50\u2013500 kb from the target TSS",
+    "display": "Fraction with positive raw high-minus-low T\u2212G RNA interaction after ranking contact contrast separately within the 50\u2013150, 150\u2013300, and 300\u2013500-kb strata.",
+    "status": "Descriptive visualization of the frozen primary association; the 50\u2013150-kb subdivision was introduced after inspection."
+  },
+  "panel_F": {
+    "left": "Spearman association of observed contact O/E contrast with raw and normalized RNA interactions in clean \u2264500-kb and clean >500-kb geometries.",
+    "right": "Continuous high-contact-site distance versus minimum margin of all RNA/activity endpoints and replacement sites to the nearest edge of the 1,048,576-bp model input."
+  },
+  "terminology": "All sequence changes are 315-bp length-preserving replacements."
+}

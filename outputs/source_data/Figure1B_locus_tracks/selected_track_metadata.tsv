@@ -1,0 +1,8 @@
+display_track	source_track_index	name	strand	Assay title	ontology_curie	biosample_name	biosample_type	biosample_life_stage	transcription_factor	data_source	endedness	genetically_modified	nonzero_mean	gtex_tissue
+cebpa	38	EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA	.	TF ChIP-seq	EFO:0001187	HepG2	cell_line	child	CEBPA	encode	single	True	0.9038640260696411	
+dnase	1	UBERON:0002107 DNase-seq	.	DNase-seq	UBERON:0002107	liver	tissue	embryonic		encode	paired	False	0.7895574569702148	
+atac	1	UBERON:0002107 ATAC-seq	.	ATAC-seq	UBERON:0002107	liver	tissue	adult		encode	paired	False	0.3416995704174042	
+rna_plus	2	UBERON:0002107 polyA plus RNA-seq	+	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child		encode	paired	False	0.37201911211013794	
+rna_plus	3	UBERON:0002107 total RNA-seq	+	total RNA-seq	UBERON:0002107	liver	tissue	embryonic		encode	paired	False	0.1001405194401741	
+rna_minus	6	UBERON:0002107 polyA plus RNA-seq	-	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child		encode	paired	False	0.37201911211013794	
+rna_minus	7	UBERON:0002107 total RNA-seq	-	total RNA-seq	UBERON:0002107	liver	tissue	embryonic		encode	paired	False	0.1001405194401741	

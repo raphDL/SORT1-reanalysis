@@ -1,0 +1,19 @@
+name: sort1-reanalysis
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy=2.2.6
+  - pandas=2.3.3
+  - scipy=1.16.1
+  - matplotlib=3.10.1
+  - seaborn=0.13.2
+  - pyarrow=18.1.0
+  - scikit-learn=1.6.1
+  - xgboost=3.0.1
+  - pyyaml=6.0.3
+  - requests=2.32.5
+  - pip
+  - pip:
+      - alphagenome @ git+https://github.com/google-deepmind/alphagenome.git@327ea82371197812b337aed8e9e75df63ce5e429
+      - alphagenome-research @ git+https://github.com/google-deepmind/alphagenome_research.git@bb6a5276a51199d9589fc8929be6a9d946b7250b

@@ -1,0 +1,44 @@
+{
+  "frozen_on": "2026-07-26",
+  "selection_inspected_matched_shuffle_results": false,
+  "selection_inspected_fold0_results": false,
+  "summary_path": "investigation/SORT1_cholesterol_musunuru_2010/results/figure3/panelF/tf_insertion_dense_100kb_8tf_3tracks/dense_100kb_8tf_3tracks_variant_summary.tsv",
+  "summary_sha256": "16d6e6b0d2f056b93ef58d67fcdf24971efb1887cec6049a0a32da1c885eb941",
+  "design_path": "investigation/SORT1_cholesterol_musunuru_2010/results/figure3/panelF/tf_insertion_dense_100kb_8tf_3tracks/dense_100kb_8tf_design.tsv",
+  "design_sha256": "57dfce1ee5d11d9738cb58a4d61a7dbc3daf7f413090642f9472bd97be45238d",
+  "orientation_rule": "largest positive raw sum_delta orientation",
+  "minimum_site_separation_bp": 500,
+  "primary_candidates_per_context": 5,
+  "secondary_candidates_per_motif_context": 3,
+  "primary_output_sha256": "ed2b7767ec928c4b3eb8c146e96422188f2fc90b12a13b5828be8116a6dbefec",
+  "secondary_output_sha256": "842f334cbd17454cf246dc4f8f7326b71b0f43ecf9d15f09a2767f5bef62160a",
+  "contexts": {
+    "liver": {
+      "motifs": [
+        "CEBP",
+        "FOXA2",
+        "HNF1B",
+        "HNF4A"
+      ],
+      "score_column": "sum_delta_liver"
+    },
+    "tcell": {
+      "motifs": [
+        "IRF8",
+        "RELA",
+        "RUNX1",
+        "SPI1"
+      ],
+      "score_column": "sum_delta_tcell"
+    },
+    "cd14_monocyte": {
+      "motifs": [
+        "IRF8",
+        "RELA",
+        "RUNX1",
+        "SPI1"
+      ],
+      "score_column": "sum_delta_cd14_monocyte"
+    }
+  }
+}

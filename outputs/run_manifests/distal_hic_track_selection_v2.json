@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "ontology_curie": "EFO:0001187",
+  "biosample_name": "HepG2",
+  "selection_policy": "Exact semantic metadata matches; no ontology or assay fallback.",
+  "RNA_SEQ": {
+    "names": [
+      "EFO:0001187 polyA plus RNA-seq",
+      "EFO:0001187 total RNA-seq"
+    ],
+    "data_source": "encode",
+    "endedness": "paired",
+    "strand_policy": "recipient gene strand plus unstranded",
+    "expected_tracks_per_gene_strand": 3,
+    "previously_observed_ALL_FOLDS_target_indices": {
+      "plus": [
+        109,
+        110,
+        568
+      ],
+      "minus": [
+        380,
+        381,
+        568
+      ]
+    }
+  },
+  "ATAC": {
+    "name": "EFO:0001187 ATAC-seq",
+    "data_source": "encode",
+    "expected_tracks": 1
+  },
+  "H3K27ac": {
+    "name": "EFO:0001187 Histone ChIP-seq H3K27ac",
+    "histone_mark": "H3K27ac",
+    "data_source": "encode",
+    "expected_tracks": 1
+  },
+  "CEBPA": {
+    "transcription_factor": "CEBPA",
+    "data_source": "encode",
+    "expected_tracks": 1,
+    "optional": true,
+    "note": "Included only when the strict metadata preflight resolves exactly one HepG2 track."
+  },
+  "provenance": {
+    "RNA_SEQ": "report/panel_other_tissues/rs12740374_all_alphagenome_rna_tracks_raw.csv",
+    "ATAC_and_H3K27ac": "report/panel_ABC/alphagenome_hepg2_activity_contact_track_intersection.tsv",
+    "CEBPA": "existing Figure 1 HepG2 CEBPA selector; exact identity is verified before predictions"
+  }
+}

@@ -1,0 +1,32 @@
+project:
+  genome_build: GRCh38
+  locus_variant: rs12740374
+  variant_chromosome: chr1
+  variant_position_1based: 109274968
+  reference_allele: G
+  alternate_allele: T
+
+alphagenome:
+  primary_model: ALL_FOLDS
+  heldout_locus_model: FOLD_0
+  alphagenome_git_sha: 327ea82371197812b337aed8e9e75df63ce5e429
+  alphagenome_research_git_sha: bb6a5276a51199d9589fc8929be6a9d946b7250b
+  # Analyses did not use one universal input size. Exact panel-level values
+  # and output summaries are recorded in outputs/run_manifests/
+  # panel_analysis_parameters.tsv.
+  locus_sequence_context_bp: 524288
+  variant_scorer_sequence_context_bp: 1048576
+  promoter_transfer_sequence_context_bp: 1048576
+  kircher_regulatory_prediction_window_bp: 16384
+  kircher_rna_prediction_window_bp: 131072
+
+module:
+  operational_length_bp: 315
+  upstream_extent_bp: 179
+  downstream_extent_bp: 135
+  outside_retention_threshold: 0.70
+  inside_retention_threshold: 0.30
+
+rendering:
+  vector_format: svg
+  raster_dpi: 300

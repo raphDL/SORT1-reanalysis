@@ -1,0 +1,25 @@
+{
+  "created_at": "2026-07-30T07:41:04.689425+00:00",
+  "fold0_expected_states": 1022,
+  "fold0_geometry_groups": {
+    "clean_le_500kb": 125,
+    "mixed": 21
+  },
+  "fold0_promoters": 146,
+  "inputs": {
+    "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_distal_hic_transfer/borzoi_sequences_human.bed.gz": "13724966c9378c2fd024c62e6bb72b94850e12d96d23a419f60040ae50b98ba3",
+    "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_distal_hic_transfer/results/chr1_hepg2_promoter_contacts_v3/selected_high_low_pairs.tsv": "996790e0be0c00a2ac466e9b07b75299aa0cbd4523ec385deaf227d81c12b4f2",
+    "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_distal_hic_transfer/results/chr1_hepg2_promoter_contacts_v3/selected_high_low_sites.tsv": "e6e5acc367036bc3fb6c3203450144fc0a8ebc187982efac3e4f6a0663254183"
+  },
+  "outputs": {
+    "fold0_selected_sites.tsv": "a6d4a6ceca652660555ae7ade35c67b61a4ed6ca7b57ea2b7cb2bf9ce4321caf",
+    "window_edge_selected_sites.tsv": "7e09e5446ba3be99839d852d68f8dfba2288ef807661a2f9b8404b5c6f4ff18f"
+  },
+  "selection_seed": 12740374,
+  "selection_status": "post_hoc_robustness_controls_frozen_before_new_predictions",
+  "sort1_exclusion_center0": 109274967,
+  "sort1_exclusion_radius_bp": 1000000,
+  "window_edge_expected_states": 1050,
+  "window_edge_margin_bp": 25000,
+  "window_edge_promoters": 150
+}

@@ -1,0 +1,10 @@
+Gene	GENCODE gene ID	Gene strand	AlphaGenome RNA track index	AlphaGenome track name	Track strand	Assay	Ontology identifier	Biosample	Biosample type	Life stage	Data source	Endedness	Included in gene-level mean
+CELSR2	ENSG00000143126.8	+	233	UBERON:0002107 polyA plus RNA-seq	+	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child	ENCODE	paired	Yes
+CELSR2	ENSG00000143126.8	+	234	UBERON:0002107 total RNA-seq	+	total RNA-seq	UBERON:0002107	liver	tissue	embryonic	ENCODE	paired	Yes
+CELSR2	ENSG00000143126.8	+	627	UBERON:0002107 polyA plus RNA-seq	.	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child, adult	ENCODE	single	Yes
+PSRC1	ENSG00000134222.16	-	504	UBERON:0002107 polyA plus RNA-seq	-	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child	ENCODE	paired	Yes
+PSRC1	ENSG00000134222.16	-	505	UBERON:0002107 total RNA-seq	-	total RNA-seq	UBERON:0002107	liver	tissue	embryonic	ENCODE	paired	Yes
+PSRC1	ENSG00000134222.16	-	627	UBERON:0002107 polyA plus RNA-seq	.	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child, adult	ENCODE	single	Yes
+SORT1	ENSG00000134243.12	-	504	UBERON:0002107 polyA plus RNA-seq	-	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child	ENCODE	paired	Yes
+SORT1	ENSG00000134243.12	-	505	UBERON:0002107 total RNA-seq	-	total RNA-seq	UBERON:0002107	liver	tissue	embryonic	ENCODE	paired	Yes
+SORT1	ENSG00000134243.12	-	627	UBERON:0002107 polyA plus RNA-seq	.	polyA plus RNA-seq	UBERON:0002107	liver	tissue	child, adult	ENCODE	single	Yes

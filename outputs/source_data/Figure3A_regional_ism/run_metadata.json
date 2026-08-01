@@ -1,0 +1,49 @@
+{
+  "region_chrom": "chr1",
+  "region_start": 109224968,
+  "region_end": 109324968,
+  "region_width_bp": 100001,
+  "center_snp": "rs12740374",
+  "center_pos": 109274968,
+  "genes": [
+    "SORT1",
+    "PSRC1",
+    "CELSR2"
+  ],
+  "gene_tss": {
+    "SORT1": 109397918,
+    "PSRC1": 109283186,
+    "CELSR2": 109249538
+  },
+  "tissues": {
+    "liver": [
+      "UBERON:0002107"
+    ],
+    "adipose_subcutaneous": [
+      "UBERON:0002190"
+    ],
+    "adipose_visceral_omentum": [
+      "UBERON:0010414"
+    ],
+    "adipose_mean": "mean(adipose_subcutaneous, adipose_visceral_omentum)"
+  },
+  "stage1": {
+    "window_bp": 10,
+    "step_bp": 5,
+    "perturbation_rule": "complement (A<->T, C<->G)",
+    "tss_half_width_bp": 2000,
+    "rows": 239988,
+    "tsv": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/results/figure2/panel_a/stage1_window_deltas.tsv"
+  },
+  "stage2": {
+    "ranking_criterion": "abs(liver - adipose_mean) from Stage 1",
+    "top_windows_per_gene": 50,
+    "window_table_tsv": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/results/figure2/panel_a/stage2_top_windows_per_gene.tsv",
+    "rows": 51120,
+    "tsv": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/results/figure2/panel_a/stage2_snv_ism_tss_deltas.tsv"
+  },
+  "figure": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/results/figure2/panel_a/figure2E_100kb_rna_ism.png",
+  "figure_clean": "/Users/raphael/Documents/sandbox/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/results/figure2/panel_a/figure2E_100kb_rna_ism_clean.png",
+  "seq_window": 524288,
+  "max_workers": 1
+}

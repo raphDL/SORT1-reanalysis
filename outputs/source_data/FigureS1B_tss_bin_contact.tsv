@@ -1,0 +1,7 @@
+source	summary	gene	resolution_bp	contact_value	same_distance_percentile	same_distance_null_n
+Experimental HepG2 Hi-C	TSS-containing bin	CELSR2	2000	1.484428882598877	50.58479532163743	513
+Experimental HepG2 Hi-C	TSS-containing bin	PSRC1	2000	1.3063092231750488	42.81609195402299	522
+Experimental HepG2 Hi-C	TSS-containing bin	SORT1	2000	8.434718132019043	99.6774193548387	465
+AlphaGenome FOLD_0	TSS-containing bin	CELSR2	2048	0.384765625	95.6	500
+AlphaGenome FOLD_0	TSS-containing bin	PSRC1	2048	-0.06982421875	22.485207100591715	507
+AlphaGenome FOLD_0	TSS-containing bin	SORT1	2048	1.8125	99.77827050997783	451

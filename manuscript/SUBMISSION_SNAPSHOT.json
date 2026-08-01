@@ -1,0 +1,25 @@
+{
+  "frozen_at_utc": "2026-08-01T18:09:02.554571+00:00",
+  "source_directory_name": "manuscript_and_figures",
+  "main_figures": [
+    "Figure1",
+    "Figure2",
+    "Figure3",
+    "Figure4"
+  ],
+  "supplementary_figures": [
+    "FigureS1",
+    "FigureS2",
+    "FigureS3",
+    "FigureS4",
+    "FigureS5",
+    "FigureS6",
+    "FigureS7",
+    "FigureS8",
+    "FigureS9",
+    "FigureS10"
+  ],
+  "supplementary_numbering_final": true,
+  "copy_operation": "byte-identical copy with filename normalization",
+  "checksum_manifest": "manuscript/SUBMISSION_SNAPSHOT_SHA256.tsv"
+}

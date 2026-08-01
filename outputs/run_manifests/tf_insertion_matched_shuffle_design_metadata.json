@@ -1,0 +1,53 @@
+{
+  "generated_on": "2026-07-26",
+  "global_seed": 12740374,
+  "requested_unique_shuffles_per_motif": 199,
+  "candidate_site_count": 37,
+  "construct_count": 14726,
+  "needs_scoring_count": 14726,
+  "primary_candidates_sha256": "ed2b7767ec928c4b3eb8c146e96422188f2fc90b12a13b5828be8116a6dbefec",
+  "secondary_candidates_sha256": "842f334cbd17454cf246dc4f8f7326b71b0f43ecf9d15f09a2767f5bef62160a",
+  "output_sha256": "ba73b7a0c26e9f3a26582d97b49f1ae02e4c2947e25a0a656c296c875e52a795",
+  "motifs": {
+    "CEBP": {
+      "seed": 10503679653521021096,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "ATTGCACAAT"
+    },
+    "FOXA2": {
+      "seed": 2256606229608363125,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "TGTAAACA"
+    },
+    "HNF1B": {
+      "seed": 12086234212579527654,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "GTTAATGATTAAC"
+    },
+    "HNF4A": {
+      "seed": 2386292007524440647,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "CAAAGTCCA"
+    },
+    "IRF8": {
+      "seed": 10616812342253494743,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "CGAAACCGAAACT"
+    },
+    "RELA": {
+      "seed": 3954105838147057003,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "GGGAATTTCC"
+    },
+    "RUNX1": {
+      "seed": 3696784250768493299,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "CTGTGGTTT"
+    },
+    "SPI1": {
+      "seed": 415918230224489768,
+      "unique_shuffle_count": 199,
+      "motif_consensus": "AAAGAGGAAGTGG"
+    }
+  }
+}

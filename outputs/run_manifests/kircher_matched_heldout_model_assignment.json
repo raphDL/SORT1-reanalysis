@@ -1,0 +1,23 @@
+{
+  "purpose": "Kircher saturation-mutagenesis benchmark with each genomic locus excluded from the selected AlphaGenome model's training set",
+  "fold_source": "Borzoi/AlphaGenome sequences_human.bed.gz commit 5c9358222b5026abb733ed5fb84f3f6c77239b37",
+  "frozen_before_heldout_scoring": true,
+  "assignments": {
+    "SORT1": {"data_fold": "fold0", "model_version": "FOLD_0", "role": "validation"},
+    "F9": {"data_fold": "fold1", "model_version": "FOLD_0", "role": "test"},
+    "FOXE1": {"data_fold": "fold3", "model_version": "FOLD_1", "role": "validation"},
+    "MYC_rs11986220": {"data_fold": "fold4", "model_version": "FOLD_1", "role": "test"},
+    "PKLR": {"data_fold": "fold2", "model_version": "FOLD_2", "role": "validation"},
+    "LDLR": {"data_fold": "fold6", "model_version": "FOLD_3", "role": "validation"}
+  },
+  "unchanged_analysis_components": [
+    "Kircher experimental measurements",
+    "GRCh38 variant reconciliation",
+    "rs12740374-T background for SORT1 Figure 2E and Figure S5",
+    "cell-line ontology selection",
+    "variant scorers and center-mask scoring definitions",
+    "barcode filters",
+    "construct inclusion and exclusion rules",
+    "correlation statistics"
+  ]
+}

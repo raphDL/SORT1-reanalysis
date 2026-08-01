@@ -1,0 +1,18 @@
+{
+  "created_utc": "2026-08-01T18:35:30.204242+00:00",
+  "model_regime": "ALL_FOLDS",
+  "input_length_bp": 524288,
+  "variant": "GRCh38 chr1:109274968 G>T (rs12740374)",
+  "ontology_terms": [
+    "UBERON:0002107",
+    "EFO:0001187"
+  ],
+  "requested_outputs": [
+    "CHIP_TF",
+    "DNASE",
+    "ATAC",
+    "RNA_SEQ"
+  ],
+  "tracks_sha256": "1bf317ece544c29ba9693236e6687ad42c6e4d78a382aa5ae38b56bdbf33e674",
+  "metadata_sha256": "666d5a380f5ce3e36fd6251a9f9189ac9131c55b1e696b7b7207687dec03e249"
+}

@@ -1,0 +1,29 @@
+variant_id	scored_interval	gene_id	gene_name	gene_type	gene_strand	junction_Start	junction_End	output_type	variant_scorer	track_name	track_strand	Assay title	ontology_curie	biosample_name	biosample_type	data_source	raw_score	quantile_score
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI9GMP2J8	.	Micro-C	EFO:0003042	H1-hESC	cell_line	4dnucleome	0.0029447153	0.99270123
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI9FVHJZQ	.	Micro-C	EFO:0009318	HFFc6	cell_line	4dnucleome	0.006855592	0.99615246
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIFLDVASC	.	in situ Hi-C	EFO:0002824	HCT116	cell_line	4dnucleome	0.0041801184	0.9985065
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIJTOIGOI	.	in situ Hi-C	EFO:0001196	IMR-90	cell_line	4dnucleome	0.011147678	0.9989707
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIXP4QG5B	.	in situ Hi-C	EFO:0002784	GM12878	cell_line	4dnucleome	0.0054715564	0.9980424
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI2VYSX9M	.	in situ Hi-C	EFO:0007073	CyT49	cell_line	4dnucleome	0.002878949	0.9971608
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI4DCV74I	.	in situ Hi-C	EFO:0003045	H9	cell_line	4dnucleome	0.0033300668	0.9974345
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI5IHU27G	.	in situ Hi-C	EFO:0005903	KBM-7	cell_line	4dnucleome	0.0048414096	0.99873894
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI6HDY7WZ	.	in situ Hi-C	EFO:0003042	H1-hESC	cell_line	4dnucleome	0.002634108	0.9929427
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI82R42AD	.	in situ Hi-C	EFO:0003042	H1-hESC	cell_line	4dnucleome	0.003085534	0.9942334
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFI8RH55DO	.	in situ Hi-C	EFO:0003045	H9	cell_line	4dnucleome	0.007985897	0.9994404
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIB59T7NN	.	in situ Hi-C	EFO:0009318	HFFc6	cell_line	4dnucleome	0.0057392716	0.996858
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIBM9QCFG	.	in situ Hi-C	EFO:0002791	HeLa-S3	cell_line	4dnucleome	0.0071838945	0.9986042
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIIOUG5RF	.	in situ Hi-C	EFO:0003045	H9	cell_line	4dnucleome	0.0058519244	0.9989352
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIK3NF6R2	.	in situ Hi-C	EFO:0007073	CyT49	cell_line	4dnucleome	0.0035621822	0.99817044
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFILP99QJS	.	in situ Hi-C	EFO:0002824	HCT116	cell_line	4dnucleome	0.0026567914	0.99783343
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIMDOXUT8	.	Dilution Hi-C	CL:0002620	skin fibroblast	cell_line	4dnucleome	0.0045149326	0.9974345
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFINFQV712	.	in situ Hi-C	EFO:0003042	H1-hESC	cell_line	4dnucleome	0.002527848	0.9946092
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFINQYW56E	.	Micro-C	EFO:0003042	H1-hESC	cell_line	4dnucleome	0.0032236204	0.9936204
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFINXSKZ4F	.	in situ Hi-C	EFO:0007073	CyT49	cell_line	4dnucleome	0.0028390475	0.99559647
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIPO1DGLH	.	in situ Hi-C	EFO:0003045	H9	cell_line	4dnucleome	0.004857326	0.9986042
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIRO3DQCO	.	in situ Hi-C	EFO:0003045	H9	cell_line	4dnucleome	0.004342258	0.998347
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIS6HAUPP	.	in situ Hi-C	EFO:0001187	HepG2	cell_line	4dnucleome	0.014269799	0.9995732
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIT5YVTLO	.	in situ Hi-C	EFO:0003045	H9	cell_line	4dnucleome	0.0027081221	0.9942334
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIVKQADWM	.	in situ Hi-C	EFO:0009747	GM25256	in_vitro_differentiated_cells	4dnucleome	0.0023136921	0.9897879
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIW8IXCX1	.	in situ Hi-C	EFO:0003042	H1-hESC	cell_line	4dnucleome	0.0030571222	0.996523
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIXOWKAM6	.	in situ Hi-C	EFO:0007073	CyT49	cell_line	4dnucleome	0.0026663414	0.9952892
+chr1:109274968:G>T	chr1:108750680-109799256:.							CONTACT_MAPS	ContactMapScorer()	4dn:4DNFIYGPDLKF	.	in situ Hi-C	EFO:0009747	GM25256	in_vitro_differentiated_cells	4dnucleome	0.0024282038	0.99045056
