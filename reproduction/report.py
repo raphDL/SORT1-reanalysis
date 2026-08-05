@@ -326,11 +326,26 @@ def compare_fig3g(run_dir: Path) -> dict[str, object]:
     }
 
 
+def compare_fig3e(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure3E_directional_recovery/Figure3E_directional_scramble_recovery_three_gene_source.tsv"
+    reference = REFERENCE_ROOT / "Figure3E_directional_recovery.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(reference, sep="\t")
+    keys = ["arm", "series", "extent_bp"]
+    joined = got.merge(want, on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    mean_values = _numeric_summary(joined.mean_retention_generated, joined.mean_retention_reference, rtol=0.0, atol=5e-3, min_pearson=0.99)
+    sem = joined.dropna(subset=["sem_retention_generated", "sem_retention_reference"])
+    sem_values = _numeric_summary(sem.sem_retention_generated, sem.sem_retention_reference, rtol=0.0, atol=5e-3, min_pearson=0.99)
+    return {"pass": len(joined) == 112 and mean_values["pass"] and sem_values["pass"], "rows": len(joined), "mean_retention": mean_values, "sem_retention": sem_values}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
-    "3B": compare_fig3b, "3C": compare_fig3c, "3G": compare_fig3g,
+    "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e, "3G": compare_fig3g,
 }
 
 
@@ -448,6 +463,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "3B": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
         "3C": ("Figure 3B outputs + JASPAR 2024 CORE + GRCh38", "none (local PWM scan)"),
         "3G": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
+        "3E": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)

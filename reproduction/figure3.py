@@ -610,3 +610,186 @@ def _render3g(three_gene_mean: pd.DataFrame, output: Path) -> None:
     ax.set_ylim(-0.04, 1.10); ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="#dddddd", linewidth=0.5); ax.set_axisbelow(True)
     _save_svg(fig, output)
+
+
+# --- Figure 3E: directional single-arm motif-protected recovery -----------
+#
+# Ported from the working archive's report/panel_asymmetric_scramble/
+# run_single_arm_recovery.py (not part of this repository).
+
+_FIG3E_UPSTREAM_EXTENTS = [0, 2, 5, 10, 20, 40, 80, 120, 160, 220, 300, 400, 600, 800, 1000]
+_FIG3E_DOWNSTREAM_EXTENTS = [0, 10, 20, 40, 80, 120, 160, 220, 300, 400, 600, 800, 1000]
+_FIG3E_SEEDS = list(range(1740374, 1740382))
+_FIG3E_LOCAL_HALF_BP = 1000
+
+
+def _scramble_range(chars: list[str], *, seq_start0: int, start1: int, end1: int, seed: int) -> None:
+    if int(end1) < int(start1):
+        return
+    indices = [pos1 - 1 - int(seq_start0) for pos1 in range(int(start1), int(end1) + 1)]
+    usable = [i for i in indices if 0 <= i < len(chars) and chars[i].upper() in {"A", "C", "G", "T"}]
+    if len(usable) <= 1:
+        return
+    values = [chars[i] for i in usable]
+    rng = np.random.default_rng(int(seed))
+    rng.shuffle(values)
+    for index, value in zip(usable, values, strict=True):
+        chars[index] = value
+
+
+def _fig3e_scramble_template(ref_seq: str, *, seq_start0: int, local_half_bp: int, scramble_seed: int) -> str:
+    """Shuffle each non-motif arm independently, never touching the
+    protected -1..+8 C/EBP motif interval."""
+    chars = list(ref_seq)
+    seed_base = int(scramble_seed) + 7_919
+    _scramble_range(chars, seq_start0=seq_start0, start1=RS_POS - local_half_bp, end1=RS_POS - 2, seed=seed_base + 11)
+    _scramble_range(chars, seq_start0=seq_start0, start1=RS_POS + 9, end1=RS_POS + local_half_bp, seed=seed_base + 29)
+    scrambled = "".join(chars)
+    for start1, end1 in ((RS_POS - local_half_bp, RS_POS - 2), (RS_POS + 9, RS_POS + local_half_bp)):
+        native_arm = ref_seq[start1 - 1 - seq_start0 : end1 - seq_start0]
+        scrambled_arm = scrambled[start1 - 1 - seq_start0 : end1 - seq_start0]
+        if sorted(native_arm) != sorted(scrambled_arm):
+            raise AssertionError(f"Arm composition changed for {start1}:{end1}, seed {scramble_seed}.")
+    native_motif = ref_seq[RS_POS - 2 - seq_start0 : RS_POS + 8 - seq_start0]
+    scrambled_motif = scrambled[RS_POS - 2 - seq_start0 : RS_POS + 8 - seq_start0]
+    if native_motif != scrambled_motif:
+        raise AssertionError("The protected motif changed during non-motif shuffling.")
+    return scrambled
+
+
+def _fig3e_copy_native_positions(background: str, native: str, *, seq_start0: int, intervals: list[tuple[int, int]]) -> str:
+    chars = list(background)
+    for start1, end1 in intervals:
+        if end1 < start1:
+            continue
+        for pos1 in range(int(start1), int(end1) + 1):
+            chars[pos1 - 1 - seq_start0] = native[pos1 - 1 - seq_start0]
+    return "".join(chars)
+
+
+def _fig3e_build_design(ref_seq: str, seq_start0: int) -> tuple[list[str], pd.DataFrame]:
+    sequences: list[str] = []
+    rows: list[dict[str, object]] = []
+
+    def add_pair(background: str, *, seed: int, condition: str, arm: str, extent_bp: int) -> None:
+        pair: dict[str, str] = {}
+        for allele, base_value in (("REF", "G"), ("ALT", "T")):
+            sequence = _set_base(background, seq_start0, RS_POS, base_value)
+            motif = _motif_at_native_position(sequence, seq_start0)
+            pair[allele] = sequence
+            sequences.append(sequence)
+            rows.append({
+                "sequence_index": len(sequences) - 1, "scramble_seed": int(seed), "condition": condition, "arm": arm,
+                "extent_bp": int(extent_bp), "allele": allele, "motif_sequence_at_native_position": motif,
+                "exact_minor_motif_at_native_position": motif == _MINOR_MOTIF,
+                "sequence_sha256": hashlib.sha256(sequence.encode()).hexdigest(),
+            })
+        differences = [i for i, (a, b) in enumerate(zip(pair["REF"], pair["ALT"], strict=True)) if a != b]
+        rs_index = RS_POS - 1 - seq_start0
+        if differences != [rs_index]:
+            raise AssertionError(f"{condition}/{arm}/{extent_bp}/seed{seed}: REF and ALT differ beyond rs12740374.")
+
+    for seed in _FIG3E_SEEDS:
+        motif_protected = _fig3e_scramble_template(ref_seq, seq_start0=seq_start0, local_half_bp=_FIG3E_LOCAL_HALF_BP, scramble_seed=seed)
+        add_pair(ref_seq, seed=seed, condition="native", arm="none", extent_bp=-1)
+        add_pair(motif_protected, seed=seed, condition="motif_only_baseline", arm="shared", extent_bp=0)
+        for upstream in _FIG3E_UPSTREAM_EXTENTS:
+            if upstream == 0:
+                continue
+            background = _fig3e_copy_native_positions(motif_protected, ref_seq, seq_start0=seq_start0, intervals=[(RS_POS - upstream, RS_POS - 2)])
+            add_pair(background, seed=seed, condition="upstream_recovery", arm="upstream", extent_bp=upstream)
+        for downstream in _FIG3E_DOWNSTREAM_EXTENTS:
+            if downstream == 0:
+                continue
+            background = _fig3e_copy_native_positions(motif_protected, ref_seq, seq_start0=seq_start0, intervals=[(RS_POS + 9, RS_POS + downstream)])
+            add_pair(background, seed=seed, condition="downstream_recovery", arm="downstream", extent_bp=downstream)
+
+    design = pd.DataFrame(rows)
+    alt_non_native = design[design.allele.eq("ALT") & ~design.condition.eq("native")]
+    if not alt_non_native.exact_minor_motif_at_native_position.all():
+        failed = alt_non_native[~alt_non_native.exact_minor_motif_at_native_position]
+        raise AssertionError(f"The complete minor-allele C/EBP motif was not retained in {len(failed)} ALT constructs.")
+    return sequences, design
+
+
+def _fig3e_retention(scored: pd.DataFrame) -> pd.DataFrame:
+    keys = ["scramble_seed", "condition", "arm", "extent_bp", "gene"]
+    ref = scored[scored.allele.eq("REF")].copy()
+    alt = scored[scored.allele.eq("ALT")].copy()
+    paired = ref.merge(alt, on=keys, suffixes=("_ref", "_alt"), validate="one_to_one")
+    paired["delta_liver"] = paired.liver_rna_signal_alt - paired.liver_rna_signal_ref
+    native = paired[paired.condition.eq("native")][["scramble_seed", "gene", "delta_liver"]].rename(
+        columns={"delta_liver": "native_delta_liver"}
+    )
+    paired = paired.merge(native, on=["scramble_seed", "gene"], validate="many_to_one")
+    denominator = paired.native_delta_liver.abs().where(paired.native_delta_liver.abs() > 1e-12, np.nan)
+    paired["retention_vs_native"] = paired.delta_liver.abs() / denominator
+    paired["signed_retention_vs_native"] = paired.delta_liver / paired.native_delta_liver.where(paired.native_delta_liver.abs() > 1e-12, np.nan)
+    return paired
+
+
+def _fig3e_three_gene_source(retention: pd.DataFrame) -> pd.DataFrame:
+    """The Figure 3E plotted/compact table: per-arm, per-series (three genes
+    plus their mean) retention curves vs recovered extent. Matches the
+    working archive's make_panel_E.py exactly, including its zero-extent
+    "motif only" baseline point shared by both arms."""
+    frame = retention[retention.gene.isin(GENES)].copy()
+    arm_specs = {"upstream_recovery": "Upstream", "downstream_recovery": "Downstream"}
+    rows: list[dict[str, object]] = []
+    for condition, arm_label in arm_specs.items():
+        curve = frame[frame.condition.eq(condition)].copy()
+        baseline = frame[frame.condition.eq("motif_only_baseline")].copy()
+        baseline = baseline.assign(extent_bp=0)
+        curve = pd.concat([baseline, curve], ignore_index=True)
+        gene_summary = curve.groupby(["gene", "extent_bp"], as_index=False).agg(mean=("retention_vs_native", "mean"))
+        for gene in GENES:
+            for row in gene_summary[gene_summary.gene.eq(gene)].sort_values("extent_bp").itertuples(index=False):
+                rows.append({"arm": arm_label, "series": gene, "extent_bp": row.extent_bp, "mean_retention": row.mean})
+        per_seed = curve.groupby(["scramble_seed", "extent_bp"], as_index=False).agg(
+            retention=("retention_vs_native", "mean"), n_genes=("gene", "nunique")
+        )
+        if not per_seed.n_genes.eq(len(GENES)).all():
+            raise ValueError("Incomplete gene triplet in directional-recovery source data")
+        mean_summary = per_seed.groupby("extent_bp", as_index=False).agg(mean=("retention", "mean"), sd=("retention", "std"), n=("retention", "count"))
+        mean_summary["sem"] = mean_summary["sd"] / np.sqrt(mean_summary["n"])
+        for row in mean_summary.sort_values("extent_bp").itertuples(index=False):
+            rows.append({"arm": arm_label, "series": "3-gene mean", "extent_bp": row.extent_bp, "mean_retention": row.mean, "sem_retention": row.sem})
+    return pd.DataFrame(rows)
+
+
+def _render3e(three_gene_source: pd.DataFrame, output: Path) -> None:
+    specs = {"Upstream": ("#2478b5", "-"), "Downstream": ("#d62728", "--")}
+    fig, ax = plt.subplots(figsize=(65 / 25.4, 45 / 25.4))
+    fig.subplots_adjust(left=0.19, right=0.98, bottom=0.22, top=0.97)
+    for arm, (color, linestyle) in specs.items():
+        arm_rows = three_gene_source[three_gene_source.arm.eq(arm)]
+        for gene in GENES:
+            gene_rows = arm_rows[arm_rows.series.eq(gene)].sort_values("extent_bp")
+            ax.plot(gene_rows.extent_bp, gene_rows.mean_retention, color=color, linestyle=linestyle, linewidth=0.7, alpha=0.35, zorder=2)
+        mean_rows = arm_rows[arm_rows.series.eq("3-gene mean")].sort_values("extent_bp")
+        ax.plot(mean_rows.extent_bp, mean_rows.mean_retention, color=color, linestyle=linestyle, linewidth=2.2, label=f"{arm}, 3-gene mean", zorder=4)
+        ax.fill_between(mean_rows.extent_bp, mean_rows.mean_retention - mean_rows.sem_retention, mean_rows.mean_retention + mean_rows.sem_retention, color=color, alpha=0.11, linewidth=0)
+    ax.axhline(1.0, color="#777777", linewidth=0.85, linestyle=":"); ax.axhline(0.0, color="#aaaaaa", linewidth=0.7)
+    ax.set_xlim(0, 1000); ax.set_ylim(-0.04, 1.16)
+    ax.set_xticks([0, 200, 400, 600, 800, 1000]); ax.set_xticklabels(["0\nmotif only", "200", "400", "600", "800", "1000"])
+    ax.set_xlabel("Native sequence restored (bp)"); ax.set_ylabel("Mean liver RNA retention\nvs intact locus")
+    ax.grid(axis="y", color="#dddddd", linewidth=0.5); ax.set_axisbelow(True)
+    ax.spines[["top", "right"]].set_visible(False)
+    _save_svg(fig, output)
+
+
+def run_fig3e(run_dir: Path, audit: Audit, fasta_path: Path, *, batch_size: int = 32, max_workers: int = 4) -> None:
+    genome, _, _, _ = _ag()
+    interval = genome.Interval(CHROM, RS_POS, RS_POS).resize(SEQ_LEN)
+    ref_seq = _fetch_reference(fasta_path, interval)
+    with audit.step("3E: build directional single-arm recovery design"):
+        sequences, design = _fig3e_build_design(ref_seq, int(interval.start))
+        out = run_dir / "derived/Figure3E_directional_recovery"; out.mkdir(parents=True, exist_ok=True)
+        design.to_csv(out / "sequence_design.csv", index=False)
+    scored = _score_design(run_dir, audit, "3E", interval, sequences, design, batch_size=batch_size, max_workers=max_workers)
+    with audit.step("3E: compute retention and render"):
+        retention = _fig3e_retention(scored)
+        retention.to_csv(out / "retention_by_seed.csv", index=False)
+        three_gene_source = _fig3e_three_gene_source(retention)
+        three_gene_source.to_csv(out / "Figure3E_directional_scramble_recovery_three_gene_source.tsv", sep="\t", index=False)
+        _render3e(three_gene_source, run_dir / "figures/Figure3E.svg")
