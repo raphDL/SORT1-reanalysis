@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from reproduce import parse_panels
 from reproduction.common import (
@@ -15,6 +16,7 @@ from reproduction.common import (
     load_api_key_file,
     load_env_file,
 )
+from reproduction.figure2 import _minor_baseline
 from reproduction.report import _numeric_summary
 
 
@@ -78,6 +80,56 @@ class ReproductionTests(unittest.TestCase):
             self.assertEqual(len(archived), 1)
             self.assertFalse((root / "audit" / "comparison.json").exists())
             self.assertEqual(len(list((root / "audit" / "attempts").glob("*/comparison.json"))), 1)
+
+    def test_fig2c_minor_baseline_survives_duplicate_zero_deletion_row(self) -> None:
+        # Regression test for the intermittent "Merge keys are not unique in
+        # right dataset; not a many-to-one merge" MergeError: the grid cell
+        # (upstream=0, downstream=0) deletes zero bases and hashes identically
+        # to the standalone "minor" design, so two design rows legitimately
+        # share `minor_hash` and every `keys` value.
+        minor_hash = "minor_hash_value"
+        keys = ["gene_symbol", "target_index"]
+        expanded = pd.DataFrame(
+            [
+                {"sequence_sha256": minor_hash, "gene_symbol": "SORT1", "target_index": 4,
+                 "design_id": "minor", "rna_mean_tss_pm2kb": 0.5},
+                {"sequence_sha256": minor_hash, "gene_symbol": "SORT1", "target_index": 4,
+                 "design_id": "del_xy_u00_d00", "rna_mean_tss_pm2kb": 0.5},
+                {"sequence_sha256": "other_hash", "gene_symbol": "SORT1", "target_index": 4,
+                 "design_id": "del_xy_u01_d00", "rna_mean_tss_pm2kb": 0.6},
+            ]
+        )
+        baseline = _minor_baseline(expanded, keys, minor_hash)
+        self.assertEqual(len(baseline), 1)
+        self.assertAlmostEqual(baseline.rna_mean_tss_pm2kb_minor.iloc[0], 0.5)
+        # The result must merge cleanly as many_to_one against the full frame.
+        expanded.merge(baseline, on=keys, how="left", validate="many_to_one")
+
+    def test_fig2c_minor_baseline_survives_nan_optional_metadata_column(self) -> None:
+        minor_hash = "minor_hash_value"
+        keys = ["gene_symbol", "biosample_name"]
+        expanded = pd.DataFrame(
+            [
+                {"sequence_sha256": minor_hash, "gene_symbol": "SORT1", "biosample_name": np.nan,
+                 "rna_mean_tss_pm2kb": 0.5},
+                {"sequence_sha256": minor_hash, "gene_symbol": "SORT1", "biosample_name": np.nan,
+                 "rna_mean_tss_pm2kb": 0.5},
+            ]
+        )
+        baseline = _minor_baseline(expanded, keys, minor_hash)
+        self.assertEqual(len(baseline), 1)
+
+    def test_fig2c_minor_baseline_raises_on_genuine_disagreement(self) -> None:
+        minor_hash = "minor_hash_value"
+        keys = ["gene_symbol"]
+        expanded = pd.DataFrame(
+            [
+                {"sequence_sha256": minor_hash, "gene_symbol": "SORT1", "rna_mean_tss_pm2kb": 0.5},
+                {"sequence_sha256": minor_hash, "gene_symbol": "SORT1", "rna_mean_tss_pm2kb": 0.9},
+            ]
+        )
+        with self.assertRaises(ValueError):
+            _minor_baseline(expanded, keys, minor_hash)
 
     def test_manifest_excludes_mutable_audit_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

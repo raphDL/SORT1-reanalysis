@@ -452,6 +452,36 @@ def _build_deletion_grid(fasta_path: Path) -> tuple[pd.DataFrame, list[SequenceS
     return designs, states, hashlib.sha256(minor_seq.encode("ascii")).hexdigest()
 
 
+def _minor_baseline(expanded: pd.DataFrame, keys: list[str], minor_hash: str) -> pd.DataFrame:
+    """Build a one-row-per-`keys` baseline table for the minor-allele sequence.
+
+    `expanded` can legitimately contain more than one design row for the same
+    underlying sequence -- e.g. the (upstream=0, downstream=0) grid cell
+    deletes zero bases and so hashes identically to the standalone "minor"
+    design. `.drop_duplicates(keys)` alone assumes every row sharing a `keys`
+    combination is byte-identical, which does not hold if an optional
+    metadata column is NaN for some rows (pandas groups NaN keys together,
+    so a `validate="many_to_one"` merge downstream can intermittently raise
+    "Merge keys are not unique in right dataset"). Aggregate explicitly
+    instead, which is unique by construction, and fail loudly with a
+    diagnosable message if the underlying values genuinely disagree rather
+    than raising an opaque pandas MergeError.
+    """
+    subset = expanded[expanded.sequence_sha256.eq(minor_hash)][keys + ["rna_mean_tss_pm2kb"]]
+    grouped = subset.groupby(keys, as_index=False, dropna=False)
+    spread = grouped["rna_mean_tss_pm2kb"].agg(lambda values: float(values.max() - values.min()))
+    inconsistent = spread[spread.rna_mean_tss_pm2kb > 1e-9]
+    if not inconsistent.empty:
+        raise ValueError(
+            "Minor-allele baseline disagrees across duplicate design rows for the same "
+            f"{keys} combination (max spread {inconsistent.rna_mean_tss_pm2kb.max():.3g}); "
+            f"first offending row: {inconsistent.iloc[0].to_dict()}"
+        )
+    return grouped["rna_mean_tss_pm2kb"].mean().rename(
+        columns={"rna_mean_tss_pm2kb": "rna_mean_tss_pm2kb_minor"}
+    )
+
+
 def run_fig2c(
     run_dir: Path, audit: Audit, fasta: Path, *, batch_size: int = 8, max_workers: int = 4
 ) -> None:
@@ -464,11 +494,7 @@ def run_fig2c(
             "ontology_curie", "biosample_name", "Assay title", "tss_half_width",
         ) if column in expanded
     ]
-    baseline = (
-        expanded[expanded.sequence_sha256.eq(minor_hash)][keys + ["rna_mean_tss_pm2kb"]]
-        .drop_duplicates(keys)
-        .rename(columns={"rna_mean_tss_pm2kb": "rna_mean_tss_pm2kb_minor"})
-    )
+    baseline = _minor_baseline(expanded, keys, minor_hash)
     expanded = expanded.merge(baseline, on=keys, how="left", validate="many_to_one")
     expanded["delta_vs_minor"] = expanded.rna_mean_tss_pm2kb - expanded.rna_mean_tss_pm2kb_minor
     expanded["percent_change_vs_minor"] = expanded.delta_vs_minor / expanded.rna_mean_tss_pm2kb_minor.replace(0, np.nan)
