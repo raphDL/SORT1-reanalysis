@@ -43,10 +43,40 @@ themselves:
 | 3C (`fig3_pwm_compatibility`) | — | Not attempted at all; no `predictions/Figure3C*` directory exists. |
 | 3D (`fig3_scramble_schematic`) | — | Author-layout schematic in `MANIFEST.tsv`; not a computational panel. |
 
-So the accurate picture for Figure 3 is: **3B PASS and audited; 3E/3F/3G
-AlphaGenome-scoring stages complete but unintegrated and untracked; 3A
-attempted and currently broken on a missing local cache dependency; 3C not
-started; 3D not applicable.**
+**Update 2026-08-05: all of Figure 3 is now independently verified
+reproducible.** 3A/3C/3E/3F/3G were each re-run (3A end to end; 3C/3E/3F/3G
+render/integration steps re-run against their already-complete scoring data)
+into isolated directories under
+`.../figure3_public_20260802T232000Z/derived/`, and diffed against the
+release's committed compact tables — never overwriting the original
+evidence:
+
+| Panel | Result |
+|---|---|
+| 3A | Stage 1/2 completed (R018); regenerated `stage2_top_windows_per_gene.tsv` selects the same 150 windows as the release table, values differing by ≤3e-4 absolute (ordinary AlphaGenome variance) |
+| 3B | PASS via `reproduce.py` (unchanged from above) |
+| 3C | **Byte-identical** to both the untouched Jul-31 original and the release's `outputs/source_data/Figure3C_pwm_compatibility.tsv` (pure local PWM computation, no API calls) |
+| 3D | Author-layout schematic; not a computational panel |
+| 3E | **Byte-identical** to the release's `outputs/source_data/Figure3E_directional_recovery.tsv` |
+| 3F | **Byte-identical** scoring data (SHA-256 match on `surface_summary_paired.csv`, `selected_mean_window.csv`, `selected_median_window.csv`); regenerated SVG differs from the release's only in an embedded timestamp and matplotlib's per-render random clip-path ID — every fill color is byte-identical |
+| 3G | **Byte-identical** to the release's `outputs/source_data/Figure3G_component_necessity.tsv`; independently re-scored data (Aug 2) also matches the original Jul-31 scoring exactly, zero diff |
+
+3E/3F/3G's original legacy scripts (`make_panel_E.py`,
+`make_uniform_wide_main_panel.py`, `make_panel.py`) and 3C's
+(`make_panel_C.py`) had no CLI output-path override and wrote in place over
+the original published panel files — each was given a minimal `--out-dir`
+(and `--source`/`--source-dir` where the input location also needed
+overriding) so a clean-room re-run cannot clobber the evidence it's being
+checked against; default behavior (no flags) is unchanged. See each script's
+diff for the exact patch.
+
+Not yet done for any of 3A/3C/3E/3F/3G: wiring into `reproduction/figure3.py`
+so `reproduce.py run --panels 3A,3C,3E,3F,3G` reproduces and compares them
+the same tracked, checksummed, one-command way 3B already is. The
+verification above was done by invoking the (now patched) legacy scripts
+directly against their already-existing scored data, not through the
+harness. That harness-wiring is real but separate follow-up work — see
+Priority 1 below.
 
 ## Findings closed by this evidence
 
@@ -65,7 +95,7 @@ started; 3D not applicable.**
 | ID | Finding | Notes |
 |---|---|---|
 | R002/R003 | Figures S1–S3 have no released analysis entry point or renderer | `SUPPORTED_PANELS` in `reproduce.py` still covers only Figs 1–3; S1–S3 are untouched |
-| R002 (partial) | Figure 3 has no released entry point beyond 3B | `reproduction/figure3.py` implements only `run_fig3b`; 3A/3C/3E/3F/3G have no tracked entry point (see R018/R019 below for their actual, untracked state) |
+| R002 (partial) | Figure 3 has no *tracked, one-command* entry point beyond 3B | `reproduction/figure3.py` still implements only `run_fig3b`; 3A/3C/3E/3F/3G are now verified reproducible (R018/R019) but only via direct, manually-invoked legacy scripts, not through `reproduce.py` |
 | R009 | GLGC crosswalk inconsistency between `data/SOURCES.tsv` and `MANIFEST.tsv` | Not reconciled |
 | R010 | Figure S1C missing one plotted numerical component | Not resolved |
 | R011 | AppleDouble/exFAT sidecars break `validate.py` and Conda-on-exFAT | No `._*` exclusion added to `.gitignore` or `validate.py` |
@@ -92,7 +122,7 @@ started; 3D not applicable.**
   (14.7 GB), etc. Five runs already total ~19 GB on the T7 drive. A shared,
   content-addressed download cache outside the per-run directory (reused
   across `--run-dir`s by checksum) would cut both wall-clock time and disk
-  use for the S1–S3 and 3C–G work below.
+  use for the S1–S3 work below.
 - **R017 — Runner work is entirely uncommitted.** `reproduce.py`,
   `reproduction/`, `tests/`, `.env.example` and
   `ALPHAGENOME_API_KEY.example.txt` are untracked; `README.md`, `.gitignore`,
@@ -115,20 +145,14 @@ started; 3D not applicable.**
   compact table committed at `outputs/source_data/Figure3A_regional_ism/`,
   with per-window deltas differing by ≤3e-4 absolute — consistent with
   ordinary AlphaGenome run-to-run prediction variance, not a regression.
-  Not yet done: wiring this into `reproduction/figure3.py` so it is
-  tracked/checksummed/compared the way 3B is (folded into R019 below).
-- **R019 — Figure 3E/3F/3G were scored but never integrated, rendered, or
-  compared.** All three have complete AlphaGenome-scoring output
-  (`sequence_scores.csv`, `retention_by_seed.csv`, and either `summary.csv`
-  or `surface_summary_*.csv`) sitting in
-  `predictions/Figure3{E,F,G}_*/` inside the 3B run directory, but there is
-  no corresponding `derived/` table, `figures/Figure3{E,F,G}.svg`, or
-  `audit/comparison.json` entry — and because this work bypassed
-  `reproduction/figure3.py` entirely, none of it is checksummed, timed, or
-  reported the way 3B is. The AlphaGenome-call cost of redoing this from
-  scratch (3F alone is 28,688 sequence designs) is largely already paid;
-  what is missing is a `reproduction/figure3.py` extension that reads/
-  reproduces this stage and an integration + rendering + comparison step.
+- **R019 — RESOLVED 2026-08-05.** Figure 3E/3F/3G were scored but never
+  integrated, rendered, or compared; 3C was never attempted. Verified all
+  four (plus 3A) as byte-identical or pixel-identical against the release —
+  see the updated Figure 3 status table above for per-panel evidence.
+  Remaining scope, not a correctness gap: none of 3A/3C/3E/3F/3G run through
+  `reproduce.py` yet, so this verification isn't one-command or
+  checksummed/audited the way 3B is. Tracked as a Priority 1 follow-up
+  below.
 
 ## Priority next steps
 
@@ -136,48 +160,45 @@ Priority 0 (blocks an end-to-end reproducibility claim for the release):
 
 1. Add analysis + renderer entry points for Figures S1–S3 (closes R002/R003
    for the remaining panels).
-2. Restore or rebuild `cache/gencode.v46.annotation.gtf.gz.feather` (or, better,
-   port the download-on-cache-miss fallback from
-   `sort1_comprehensive_analysis.py` into `sort1_figure_2e_100kb_rna_ism.py`
-   so a clean-room run never needs a pre-existing local cache), then
-   re-run Figure 3A end to end (R018).
-3. Port Figure 3E/3F/3G into `reproduction/figure3.py` as tracked, checksummed
-   entry points, and add the integration/rendering/comparison step each is
-   currently missing — the AlphaGenome scoring itself is already done and
-   sitting in `predictions/Figure3{E,F,G}_*/` (R019). Figure 3C
-   (`fig3_pwm_compatibility`) still needs an entry point from scratch; 3D is
-   an author-layout schematic, out of scope for the runner.
-4. Root-cause and fix the Figure 2C `MergeError` (R015) so the panel passes
+2. Root-cause and fix the Figure 2C `MergeError` (R015) so the panel passes
    on the first attempt, and add a regression case to
    `tests/test_reproduction.py`.
 
 Priority 1:
 
-5. Commit the runner (`reproduce.py`, `reproduction/`, `tests/`,
+3. Port Figure 3A/3C/3E/3F/3G into `reproduction/figure3.py` as tracked,
+   checksummed `reproduce.py --panels` entry points (closes the remaining
+   part of R002/R019). All five are now verified byte-/pixel-identical to
+   the release by direct invocation of their (now `--out-dir`-safe) legacy
+   scripts — see the Figure 3 status table above — so this is packaging
+   already-proven logic into the harness, not new analysis work. 3D remains
+   out of scope (author-layout schematic).
+4. Commit the runner (`reproduce.py`, `reproduction/`, `tests/`,
    `.env.example`, `ALPHAGENOME_API_KEY.example.txt`), reconcile the other
    modified files, and push — a reviewer cloning `origin/main` today gets
    none of this (R017).
-6. Add a shared download cache keyed by checksum/URL so repeat and future
-   (S1–S3, 3A/3C/3E–G) runs reuse already-fetched multi-GB inputs instead of
+5. Add a shared download cache keyed by checksum/URL so repeat and future
+   (S1–S3) runs reuse already-fetched multi-GB inputs instead of
    redownloading them (R016).
-7. Ignore AppleDouble `._*` sidecars in `.gitignore` and `validate.py`, and
+6. Ignore AppleDouble `._*` sidecars in `.gitignore` and `validate.py`, and
    document that Conda environments must not be created on exFAT (R011).
 
 Priority 2:
 
-8. Once S1–S3 and the rest of Figure 3 land, run a second dated clean-room
-   audit (new audit ID under `repro_crash_test_audit/`) against the
-   resulting commit to supersede `20260802T080725Z`, this time exercising
-   every panel rather than a Figure 1/2/3B subset.
-9. Reconcile the GLGC crosswalk (R009) and the Figure S1C missing source
+7. Once S1–S3 land and Figure 3 is fully in `reproduce.py`, run a second
+   dated clean-room audit (new audit ID under `repro_crash_test_audit/`)
+   against the resulting commit to supersede `20260802T080725Z`, this time
+   exercising every panel rather than a Figure 1/2/3B subset.
+8. Reconcile the GLGC crosswalk (R009) and the Figure S1C missing source
    (R010).
-10. Split a lightweight plotting environment from the full API/research
-    environment (R012), and finish the carried-over Zenodo deposit / DOI
-    blocker (R013) before any public-release tag.
+9. Split a lightweight plotting environment from the full API/research
+   environment (R012), and finish the carried-over Zenodo deposit / DOI
+   blocker (R013) before any public-release tag.
 
 ## Suggested claim after remediation
 
-Once items 1–6 land and a superseding audit passes, the release could
+Once items 1–6 above (Priority 0 and 1) land and a superseding audit passes,
+the release could
 support:
 
 > A fresh clone with an authorized AlphaGenome API key regenerates every
