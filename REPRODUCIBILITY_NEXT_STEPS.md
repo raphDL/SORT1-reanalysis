@@ -99,18 +99,24 @@ started; 3D not applicable.**
   `environment.yml` and several `figures/rendered/*` files are modified but
   unstaged; local `main` is one commit behind `origin/main`. None of the
   PASS evidence above is currently reachable from a fresh clone.
-- **R018 — Figure 3A cannot currently complete: missing GENCODE cache
-  dependency.** `sort1_figure_2e_100kb_rna_ism.py` hard-requires a prebuilt
-  `cache/gencode.v46.annotation.gtf.gz.feather` (its `_load_gene_tss` /
-  `_load_gene_models` helpers have no download fallback, unlike the
-  equivalent helper in `sort1_comprehensive_analysis.py`, which fetches
-  `https://storage.googleapis.com/alphagenome/reference/gencode/hg38/gencode.v46.annotation.gtf.gz.feather`
-  on a cache miss). That `cache/` directory does not exist anywhere on the
-  source machine right now, so any fresh attempt at 3A fails immediately.
-  The stage-1/stage-2 data files present in
-  `predictions/Figure3A_regional_ism/` prove the cache existed for one
-  earlier successful pass, then disappeared before the run that produced
-  `logs/Figure3A_regional_ism.log`.
+- **R018 — RESOLVED 2026-08-05.** Figure 3A could not complete: missing
+  GENCODE cache dependency. `sort1_figure_2e_100kb_rna_ism.py`
+  hard-required a prebuilt `cache/gencode.v46.annotation.gtf.gz.feather`
+  (its `_load_gene_tss` / `_load_gene_models` helpers had no download
+  fallback, unlike the equivalent helper in `sort1_comprehensive_analysis.py`).
+  Fix applied: ported the same download-on-cache-miss fallback into
+  `sort1_figure_2e_100kb_rna_ism.py`, then restored the cache and re-ran.
+  The interrupted checkpoint at `predictions/Figure3A_regional_ism/`
+  (stage 1 complete, stage 2 partial: 28,417/51,120 rows) resumed and
+  finished cleanly: stage 1 = 239,988 rows, stage 2 = 51,120 rows,
+  `run_metadata.json` region/gene-TSS/tissue/seq-window fields identical to
+  the original publication run's metadata. The regenerated
+  `stage2_top_windows_per_gene.tsv` selects the same 150 windows as the
+  compact table committed at `outputs/source_data/Figure3A_regional_ism/`,
+  with per-window deltas differing by ≤3e-4 absolute — consistent with
+  ordinary AlphaGenome run-to-run prediction variance, not a regression.
+  Not yet done: wiring this into `reproduction/figure3.py` so it is
+  tracked/checksummed/compared the way 3B is (folded into R019 below).
 - **R019 — Figure 3E/3F/3G were scored but never integrated, rendered, or
   compared.** All three have complete AlphaGenome-scoring output
   (`sequence_scores.csv`, `retention_by_seed.csv`, and either `summary.csv`
