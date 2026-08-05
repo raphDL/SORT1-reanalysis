@@ -634,5 +634,48 @@ chased as a bug, once the run completes.
 Real run launched via `reproduce.py run --panels 4H` on T7
 (`figure4h_20260805`), batch_size=32, max_workers=8 (matching the
 archive's own most-efficient configuration, ~21 variants/s in the
-archive's original liver run). Completion and comparison results to be
-recorded in a follow-up update.
+archive's original liver run). **Stopped by user decision** after 256 of
+~900,000 predictions (negligible cost) -- given the noise-floor finding
+above, and 4J's comparable scale (see below), the multi-day wall-clock
+cost for both wasn't judged worth it right now. The port itself
+(`reproduction/figure4h.py`) is complete, wired, and committed; a future
+session can resume the run at any time via the same command (its
+per-batch TSV checkpointing means nothing already scored would be
+redone).
+
+## Update 2026-08-05 (session close): Figure 4J sized, not started
+
+4J (TF-motif-insertion discovery map) was read and sized before touching
+it, per standing instruction: `investigation/SORT1_cholesterol_musunuru_2010/
+report/panel_TF_insertion/run_dense_tf_insertion_100kb.py`. Same +/-50kb,
+100,001-site window as 4H, crossed with 8 JASPAR-consensus TF motifs
+(HNF1B/HNF4A/FOXA2/CEBP for liver; SPI1/RUNX1/IRF8/RELA for immune) x up to
+2 orientations (forward + reverse-complement where they differ) -- **exactly
+1,599,944 variants**, confirmed against the archive's own logged
+`variant_count_observed`. Each variant scores all 3 genes x 3 cell types
+(liver/CD8+ memory T cell/CD14+ monocyte, reusing the identical track
+definitions built for 4H) from one `RECOMMENDED_VARIANT_SCORERS["RNA_SEQ"]`
+call. The archive's own run log gives a real measured rate of 9.65
+variants/s -> ~46 hours (~1.9 days), matching its file timestamps exactly.
+Its 528MB reference table is Zenodo-pending, same situation as 4H.
+
+**Not started** -- given 4H alone (~900K predictions) was already stopped
+for the same reason, 4J's comparable ~1.9-day, ~1.6M-prediction scope
+wasn't started this session. `reproduction/figure4j.py` does not exist yet;
+whoever picks this up next should start from this scoping (verified
+against the archive's own run metadata, not estimated) rather than
+re-deriving it.
+
+## Session summary
+
+Completed and passing this session: 4B, 4C, 4E, 4F, 4G (all real, freshly
+scored via `reproduce.py`, wired into `report.py`, documented, committed).
+4H is ported and wired but its heavy run was stopped early by user
+decision (documented finding above still stands on the 108-variant real
+sample). 4J is scoped but not ported. 4A/4D/4I remain non-computational
+author-layout schematics, out of scope. All work is on the internal-disk
+dev checkout (`_release/SORT1-reanalysis`, 11+ commits ahead of `origin`,
+not yet pushed to GitHub); actual `reproduce.py` executions run from that
+checkout with `--run-dir` pointed at `/Volumes/T7/alphaGenome/
+repro_crash_test/runs/`, keeping every download and every AlphaGenome
+prediction isolated from the development machine's own cache.
