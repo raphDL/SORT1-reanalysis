@@ -519,18 +519,58 @@ def compare_fig4g(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == 7 and all(item["pass"] for item in results.values()), "rows": len(joined), "values": results}
 
 
+ZENODO_PENDING_4H_SHA256 = "ffb6d838330b7cf00a81217f26ee88940ef8669622fce7a182a3c8deecc2878e"
+
+
+def compare_fig4h(run_dir: Path, *, reference_file: Path | None = None) -> dict[str, object]:
+    """4H's reference table (17.3MB) is Zenodo-pending -- not committed to
+    this repository's git history (see outputs/run_manifests/
+    zenodo_pending_large_outputs.tsv). Same convention as --hpa-file/
+    --wang-xls: accept a manually supplied, checksum-verified copy (here,
+    reproduce.py compare's --reference-4h-file) rather than requiring it in
+    the repo. Without one, this reports that comparison is not possible yet
+    -- not a failure of the generated run itself."""
+    generated = run_dir / "derived/Figure4H_regional_tissue_scan/Figure4H_regional_tissue_scan.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    if reference_file is None or not Path(reference_file).exists():
+        return {"pass": False, "reason": "reference_zenodo_pending_not_supplied"}
+    observed = sha256_file(Path(reference_file))
+    if observed != ZENODO_PENDING_4H_SHA256:
+        return {"pass": False, "reason": "reference_checksum_mismatch", "expected": ZENODO_PENDING_4H_SHA256, "observed": observed}
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(reference_file, sep="\t")
+    results: dict[str, object] = {}
+    for track in ("liver", "cd14_monocyte", "tcell"):
+        g = got[got.track.eq(track)].set_index("position")["synergy_score"]
+        w = want[want.track.eq(track)].set_index("position")["synergy_score"]
+        common = g.index.intersection(w.index)
+        # Individual-SNP RNA(TSS) deltas 50kb from a TSS are tiny (~1e-5-1e-4)
+        # -- audited and confirmed genuinely below the archive's ~5-month-old
+        # model snapshot's drift at that scale (not an extraction bug: the
+        # reference-allele signal itself matches to the same ~1e-4 the rest
+        # of this project already treats as ordinary run-to-run AlphaGenome
+        # noise -- see REPRODUCIBILITY_NEXT_STEPS.md). A real, expected FAIL
+        # here documents that finding rather than a defect in this port.
+        results[track] = _numeric_summary(g.loc[common].to_numpy(), w.loc[common].to_numpy(), rtol=0.0, atol=1e-5, min_pearson=0.5)
+    return {"pass": all(bool(item["pass"]) for item in results.values()), "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
     "3A": compare_fig3a, "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e,
     "3F": compare_fig3f, "3G": compare_fig3g, "4B": compare_fig4b, "4C": compare_fig4c,
-    "4E": compare_fig4e, "4F": compare_fig4f, "4G": compare_fig4g,
+    "4E": compare_fig4e, "4F": compare_fig4f, "4G": compare_fig4g, "4H": compare_fig4h,
 }
 
 
-def compare_run(run_dir: Path, panels: list[str]) -> dict[str, object]:
-    results = {panel: COMPARATORS[panel](run_dir) for panel in panels}
+def compare_run(run_dir: Path, panels: list[str], *, reference_4h_file: Path | None = None) -> dict[str, object]:
+    results = {
+        panel: (compare_fig4h(run_dir, reference_file=reference_4h_file) if panel == "4H" else COMPARATORS[panel](run_dir))
+        for panel in panels
+    }
     comparison = {
         "created_utc": utc_now(),
         "comparison_code": {
@@ -653,6 +693,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "4E": ("GRCh38 + GENCODE v46 + 4DN HepG2 Hi-C + AlphaGenome API", "ALL_FOLDS"),
         "4F": ("GRCh38 + GENCODE v46 + 4DN HepG2 Hi-C + AlphaGenome API (shares 4E's run)", "ALL_FOLDS"),
         "4G": ("AlphaGenome API (single variant, RNA_SEQ scorer)", "ALL_FOLDS"),
+        "4H": ("GRCh38 + AlphaGenome API (exhaustive +/-50kb x 3-alt x 3-tissue ISM)", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)

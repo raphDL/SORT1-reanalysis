@@ -45,13 +45,14 @@ from reproduction.figure3 import run_fig3a, run_fig3b, run_fig3c, run_fig3e, run
 from reproduction.figure4 import run_fig4b, run_fig4c
 from reproduction.figure4ef import run_fig4ef
 from reproduction.figure4g import run_fig4g
+from reproduction.figure4h import run_fig4h
 from reproduction.report import compare_run, write_report
 
 
 FIGURE1_PANELS = ["1B", "1C", "1D", "1E", "1F"]
 FIGURE2_PANELS = ["2B", "2C", "2E", "2F"]
 FIGURE3_PANELS = ["3A", "3B", "3C", "3E", "3F", "3G"]
-FIGURE4_PANELS = ["4B", "4C", "4E", "4F", "4G"]
+FIGURE4_PANELS = ["4B", "4C", "4E", "4F", "4G", "4H"]
 SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -220,6 +221,9 @@ def run(args: argparse.Namespace) -> int:
                     run_fig4ef(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
         if "4G" in args.panels:
             run_fig4g(args.run_dir, audit)
+        if "4H" in args.panels:
+            with audit.step("4H: exhaustive +/-50kb x 3-alt x 3-tissue regional ISM synergy scan"):
+                run_fig4h(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)
@@ -279,7 +283,7 @@ def compare(args: argparse.Namespace) -> int:
         raise FileNotFoundError(f"Not a reproduction run directory: {args.run_dir}")
     audit = json.loads(run_json.read_text())
     panels = args.panels or audit["panels"]
-    result = compare_run(args.run_dir, panels)
+    result = compare_run(args.run_dir, panels, reference_4h_file=args.reference_4h_file)
     report = write_report(args.run_dir, result)
     print(f"Comparison: {'PASS' if result['pass'] else 'FAIL'}")
     print(f"Report: {report}")
@@ -342,6 +346,11 @@ def main() -> None:
     compare_parser = subparsers.add_parser("compare", help="Compare a completed run to frozen references")
     compare_parser.add_argument("--run-dir", type=Path, required=True)
     compare_parser.add_argument("--panels", type=parse_panels, default=None)
+    compare_parser.add_argument(
+        "--reference-4h-file", type=Path, default=None,
+        help="Manually supplied copy of Figure4H_regional_tissue_scan.tsv (checksum-verified) "
+             "since that reference is Zenodo-pending and not committed to this repository.",
+    )
     args = parser.parse_args()
     if args.api_key_file is None and DEFAULT_KEY_FILE.exists():
         args.api_key_file = DEFAULT_KEY_FILE

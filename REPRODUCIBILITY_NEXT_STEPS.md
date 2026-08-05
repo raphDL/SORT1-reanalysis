@@ -569,3 +569,70 @@ Zenodo-pending, not in this repo at all; approach not yet decided) and 4J
 (TF-motif-insertion discovery map -- scoring script not yet located, likely
 the single largest computation in the release by raw table size). 4A/4D/4I
 remain non-computational author-layout schematics, out of scope.
+
+## Update 2026-08-05 (very late night): Figure 4H -- exhaustive regional
+## ISM scan, and a real finding about signal-to-noise at this scale
+
+4H is a materially larger computation than every other Figure 4 panel:
+every position in the +/-50kb window around rs12740374 x its 3 non-
+reference bases (300,003 variants), scored independently in liver, CD8+
+memory T cells, and CD14+ monocytes (~900,000 AlphaGenome predictions
+total) -- an *exhaustive* scan, unlike Figure 3A's cheaper coarse-to-fine
+search (a genuinely different, larger computation, not reusable from that
+panel despite scanning the same region). Ported from the working archive's
+shared ISM engine (`sort1_figure_2e_100kb_rna_ism.py::run_stage2_snv_scan`,
+invoked exhaustively by `results/figure2/panel_a/
+run_panel_a_full_region_exhaustive_snv.py` for liver and by
+`results/figure3/panelB` / `panelD`'s tcell/macrophage exhaustive scripts
+for the other two tissues) plus the best-alt-per-position synergy
+reduction from `run_panel_a_full_region_snv_synergy.py`, into
+`reproduction/figure4h.py`. The 17.3MB reference table is Zenodo-pending
+(not committed to this repository's git history; see
+`outputs/run_manifests/zenodo_pending_large_outputs.tsv`), so
+`compare_fig4h` accepts a manually supplied, checksum-verified copy via
+`reproduce.py compare --reference-4h-file`, same convention as
+`--hpa-file`/`--wang-xls`.
+
+**Before committing to the ~1-2.5 day, ~900K-prediction run, a small real-
+API smoke test surfaced a genuine finding, not a bug**: scoring the exact
+same 108 archive-published (position, gene) combinations fresh gave a
+reference-allele signal that matched the archive to ~1e-4 (the same
+run-to-run AlphaGenome variance already established elsewhere in this
+project as acceptable) -- but the *delta* values (alt minus ref) showed
+essentially zero correlation with the archive's (Pearson r = 0.006, n =
+108), even though both sets of deltas live in the same tiny range (archive
+mean -4.0e-05, std 5.2e-05).
+
+Audited before accepting that conclusion, rather than assuming it:
+- **Ruled out non-determinism**: the same variant scored twice, fresh, gave
+  bit-for-bit identical reference and delta values both times. AlphaGenome
+  inference is deterministic for a fixed input.
+- **Ruled out a model-version mismatch**: the archive's script never sets
+  `model_version` (relies on the server default); this port explicitly
+  requests `ALL_FOLDS`. Scored the same variant under both and got
+  identical results -- the server default already is `ALL_FOLDS`.
+- **What's left**: the reference-allele signal is real, deterministic, and
+  differs from the archive's Feb 2026 snapshot by ~1e-4 -- consistent with
+  the AlphaGenome backend having drifted somewhat over the ~5-month gap
+  even though the `ALL_FOLDS` label is unchanged. Everywhere else in this
+  project that ~1e-4 is negligible against much larger signals (0.05-0.6
+  range); here, the signal being measured (one SNP's effect on a gene's
+  RNA 50kb away) is itself only ~1e-4-2e-4, so that ordinary drift is the
+  same size as, or larger than, what's being reproduced.
+
+Net effect: an exhaustive "best single alt at each of 300,003 positions"
+search, applied to a signal that small, is expected to select differently
+depending on which side of that drift a given position's noise happens to
+land on -- not because the port is wrong (the reference-allele match rules
+that out), but because the underlying quantity is close to AlphaGenome's
+own measurement floor at this resolution. The user confirmed this is a
+legitimate finding worth documenting and directed continuing the full run
+regardless, so `compare_fig4h`'s per-track Pearson-correlation check is
+expected to genuinely FAIL -- reported honestly as that finding, not
+chased as a bug, once the run completes.
+
+Real run launched via `reproduce.py run --panels 4H` on T7
+(`figure4h_20260805`), batch_size=32, max_workers=8 (matching the
+archive's own most-efficient configuration, ~21 variants/s in the
+archive's original liver run). Completion and comparison results to be
+recorded in a follow-up update.
