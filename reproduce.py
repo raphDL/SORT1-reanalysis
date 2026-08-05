@@ -43,13 +43,14 @@ from reproduction.figure2 import (
 )
 from reproduction.figure3 import run_fig3a, run_fig3b, run_fig3c, run_fig3e, run_fig3f, run_fig3g
 from reproduction.figure4 import run_fig4b, run_fig4c
+from reproduction.figure4ef import run_fig4ef
 from reproduction.report import compare_run, write_report
 
 
 FIGURE1_PANELS = ["1B", "1C", "1D", "1E", "1F"]
 FIGURE2_PANELS = ["2B", "2C", "2E", "2F"]
 FIGURE3_PANELS = ["3A", "3B", "3C", "3E", "3F", "3G"]
-FIGURE4_PANELS = ["4B", "4C"]
+FIGURE4_PANELS = ["4B", "4C", "4E", "4F"]
 SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -211,6 +212,11 @@ def run(args: argparse.Namespace) -> int:
         if "4C" in args.panels:
             with audit.step("4C: HPA bottom/middle/top-500 cohort fold-change at 30bp"):
                 run_fig4c(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers, hpa_file=args.hpa_file)
+        if "4E" in args.panels or "4F" in args.panels:
+            done_marker = args.run_dir / "derived/Figure4EF_distal_contact_transfer/Figure4F_contact_dose_response.tsv"
+            if not done_marker.exists():
+                with audit.step("4E/4F: chr1 Hi-C-guided distal-contact 315bp T/G transfer benchmark"):
+                    run_fig4ef(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)

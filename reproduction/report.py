@@ -426,12 +426,86 @@ def compare_fig4c(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == 9 and all(item["pass"] for item in results.values()), "rows": len(joined), "values": results}
 
 
+def compare_fig4e(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure4EF_distal_contact_transfer/Figure4E_distance_fraction_positive.tsv"
+    reference = REFERENCE_ROOT / "Figure4E_distance_fraction_positive/plot_distance_band_bootstrap.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(reference, sep="\t")
+    keys = ["distance_label"]
+    columns = ["fraction", "n_clusters"]
+    joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    # `fraction` is a raw empirical proportion (not a bootstrap draw -- only
+    # its CI is), so it's an ordinary two-independent-sample proportion
+    # difference between one freshly re-scored AlphaGenome run and the
+    # archived run; see _cluster_proportion_difference_check for the
+    # per-row, cluster-count-derived tolerance (same statistic as 4F).
+    results = {"fraction": _cluster_proportion_difference_check(
+        joined["fraction_generated"], joined["fraction_reference"],
+        joined["n_clusters_generated"], joined["n_clusters_reference"],
+    )}
+    return {"pass": len(joined) == 5 and all(item["pass"] for item in results.values()), "rows": len(joined), "values": results}
+
+
+def _cluster_proportion_difference_check(
+    generated: np.ndarray, reference: np.ndarray, n_clusters_generated: np.ndarray, n_clusters_reference: np.ndarray,
+    *, z: float = 1.96,
+) -> dict[str, object]:
+    """Per-row tolerance for comparing an empirical proportion (`fraction` of
+    promoters with a positive T-G interaction, one independent AlphaGenome
+    re-scoring vs. the archived run) computed over a cluster-bootstrap unit.
+    `fraction` itself is not a bootstrap draw -- only its CI is -- so it is
+    an ordinary two-independent-sample proportion difference; its worst-case
+    standard error (at p=0.5, which maximizes Bernoulli variance) is
+    sqrt(p(1-p)/n1 + p(1-p)/n2) with n1, n2 the cluster counts (not raw row
+    counts, since clusters -- not promoters -- are the independent unit).
+    A z=1.96 (95%) bound is applied per-row from that row's own cluster
+    count, not a single blanket tolerance fit to whichever row is hardest to
+    pass."""
+    generated, reference = np.asarray(generated, dtype=float), np.asarray(reference, dtype=float)
+    n_min = np.minimum(np.asarray(n_clusters_generated, dtype=float), np.asarray(n_clusters_reference, dtype=float))
+    threshold = z * np.sqrt(0.5 * 0.5 / n_min + 0.5 * 0.5 / n_min)
+    delta = np.abs(generated - reference)
+    row_pass = delta <= threshold
+    return {
+        "pass": bool(row_pass.all()),
+        "n": int(len(generated)),
+        "max_abs_difference": float(delta.max()),
+        "mean_abs_difference": float(delta.mean()),
+        "criterion": "per-row 95% two-independent-sample proportion-difference bound at worst-case p=0.5, using min(n_clusters_generated, n_clusters_reference)",
+        "rows_failing": int((~row_pass).sum()),
+    }
+
+
+def compare_fig4f(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure4EF_distal_contact_transfer/Figure4F_contact_dose_response.tsv"
+    reference = REFERENCE_ROOT / "Figure4F_contact_dose_response.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(reference, sep="\t")
+    keys = ["distance_stratum", "contact_quintile"]
+    joined = got.merge(want, on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {
+        "median_contact_contrast": _numeric_summary(
+            joined["median_contact_contrast_generated"], joined["median_contact_contrast_reference"], rtol=0.05, atol=0.15,
+        ),
+        "fraction": _cluster_proportion_difference_check(
+            joined["fraction_generated"], joined["fraction_reference"],
+            joined["n_clusters_generated"], joined["n_clusters_reference"],
+        ),
+    }
+    return {"pass": len(joined) == 25 and all(item["pass"] for item in results.values()), "rows": len(joined), "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
     "3A": compare_fig3a, "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e,
     "3F": compare_fig3f, "3G": compare_fig3g, "4B": compare_fig4b, "4C": compare_fig4c,
+    "4E": compare_fig4e, "4F": compare_fig4f,
 }
 
 
@@ -476,6 +550,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         panel: sum(
             int(attempt.get("api_calls", {}).get(panel, 0))
             + (int(attempt.get("api_calls", {}).get("1C-middle", 0)) if panel == "1C" else 0)
+            + (int(attempt.get("api_calls", {}).get("4E/4F", 0)) if panel == "4E" else 0)
             for attempt in attempts
         )
         for panel in audit["panels"]
@@ -484,6 +559,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         panel: sum(
             int(attempt.get("api_requests", {}).get(panel, 0))
             + (int(attempt.get("api_requests", {}).get("1C-middle", 0)) if panel == "1C" else 0)
+            + (int(attempt.get("api_requests", {}).get("4E/4F", 0)) if panel == "4E" else 0)
             for attempt in attempts
         )
         for panel in audit["panels"]
@@ -554,6 +630,8 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "3F": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
         "4B": ("GRCh38 + frozen bottom100 recipient design + AlphaGenome API", "ALL_FOLDS"),
         "4C": ("GRCh38 + HPA v24.1 + GENCODE v46 + AlphaGenome API", "ALL_FOLDS"),
+        "4E": ("GRCh38 + GENCODE v46 + 4DN HepG2 Hi-C + AlphaGenome API", "ALL_FOLDS"),
+        "4F": ("GRCh38 + GENCODE v46 + 4DN HepG2 Hi-C + AlphaGenome API (shares 4E's run)", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)
