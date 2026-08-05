@@ -353,3 +353,260 @@ def run_fig3c(run_dir: Path, audit: Audit, fasta_path: Path) -> None:
         best.to_csv(out / "Figure3C_PWM_disruption_best_family_hits.tsv", sep="\t", index=False)
         heat.to_csv(out / "Figure3C_PWM_disruption_values.tsv", sep="\t")
         _render3c(heat, run_dir / "figures/Figure3C.svg")
+
+
+# --- Figures 3E/3F/3G: shared scramble-design / REF-ALT retention machinery
+#
+# All three panels build many REF/ALT sequence pairs around rs12740374 under
+# a composition-preserving scramble background, score each with AlphaGenome,
+# and compute a "retention vs an unscrambled/native baseline" ratio.  Ported
+# from the working archive's report/panel_asymmetric_scramble/
+# run_asymmetric_native_scramble.py (the shared "asym" library imported by
+# both run_single_arm_recovery.py [3E] and run_component_necessity.py [3G])
+# and the "wide_main_panel" 1bp-grid driver [3F] -- not part of this
+# repository. See REPRODUCIBILITY_NEXT_STEPS.md R019.
+
+_MINOR_MOTIF = "GTTGCTCAAT"
+_MOTIF_START_1BASED = RS_POS - 1
+
+
+def _motif_at_native_position(seq: str, seq_start0: int) -> str:
+    start_index = _MOTIF_START_1BASED - 1 - seq_start0
+    return seq[start_index : start_index + len(_MINOR_MOTIF)]
+
+
+def _set_base(seq: str, seq_start0: int, pos1: int, base_value: str) -> str:
+    index = int(pos1) - 1 - int(seq_start0)
+    chars = list(seq)
+    chars[index] = str(base_value).upper()
+    return "".join(chars)
+
+
+def _gene_tss_table() -> dict[str, int]:
+    """SORT1/PSRC1/CELSR2 TSS positions -- identical values to what GENCODE
+    v46 lookup produces (verified against sort1_hypothesis_panels.py's
+    _load_gene_tss), sourced from the already-available GENE_TABLE so 3E/3F/
+    3G need no GENCODE download at all."""
+    return dict(zip(GENE_TABLE.gene_symbol, GENE_TABLE.tss_hg38.astype(int)))
+
+
+def _score_design(
+    run_dir: Path, audit: Audit, panel: str, interval: Any, sequences: list[str],
+    design: pd.DataFrame, *, batch_size: int, max_workers: int,
+) -> pd.DataFrame:
+    """Score every unique sequence referenced by `design` for all three genes'
+    liver RNA(TSS) signal, checkpointed per sequence hash (same pattern as
+    run_fig3b). `design` must have `sequence_index` and `sequence_sha256`
+    columns; returns one row per (design row, gene)."""
+    genome, dna_client, dna_model, _ = _ag()
+    cache = run_dir / "predictions" / f"Figure{panel}_sequence_cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    hash_to_seq = dict(zip(design.sequence_sha256, [sequences[int(i)] for i in design.sequence_index]))
+    values: dict[str, dict[str, float]] = {}
+    for digest in hash_to_seq:
+        path = cache / f"{digest}.tsv"
+        if path.exists():
+            values[digest] = pd.read_csv(path, sep="\t").set_index("gene").liver_rna_signal.to_dict()
+    missing = [digest for digest in hash_to_seq if digest not in values]
+    client = None
+    for start in range(0, len(missing), batch_size):
+        batch = missing[start : start + batch_size]
+        if client is None:
+            client = dna_client.create(api_key(), model_version=dna_model.ModelVersion.ALL_FOLDS, timeout=300)
+        with audit.step(f"{panel}: score sequences {start + 1}-{start + len(batch)}"):
+            outputs = client.predict_sequences(
+                sequences=[hash_to_seq[digest] for digest in batch],
+                requested_outputs={dna_client.OutputType.RNA_SEQ}, ontology_terms=[LIVER],
+                intervals=[interval] * len(batch), progress_bar=False, max_workers=max_workers,
+            )
+            for digest, output in zip(batch, outputs, strict=True):
+                gene_values = _summarize(output, interval)
+                pd.DataFrame([{"gene": g, "liver_rna_signal": gene_values[g]} for g in GENES]).to_csv(
+                    cache / f"{digest}.tsv", sep="\t", index=False
+                )
+                values[digest] = gene_values
+            audit.add_api_calls(panel, len(batch))
+            audit.add_api_requests(panel, 1)
+    rows: list[dict[str, object]] = []
+    for row in design.itertuples(index=False):
+        gene_values = values[row.sequence_sha256]
+        for gene in GENES:
+            rows.append({**row._asdict(), "gene": gene, "liver_rna_signal": gene_values[gene]})
+    return pd.DataFrame(rows)
+
+
+# --- Figure 3G: expanded component-necessity audit ------------------------
+
+_FIG3G_SEEDS = list(range(1740374, 1740382))
+_FIG3G_COMPONENTS: list[tuple[str, list[tuple[int, int]], str]] = [
+    ("native", [], "control"), ("full_315", [(-179, 135)], "control"),
+    ("H1", [(-178, -167)], "hotspot"), ("H2", [(-152, -141)], "hotspot"),
+    ("H3", [(-87, -76)], "hotspot"), ("H4", [(-61, -50)], "hotspot"),
+    ("H5", [(-37, -26)], "hotspot"), ("H6", [(50, 61)], "hotspot"),
+    ("C/EBP", [(-1, 8)], "positive_control"),
+    ("upstream_arm", [(-179, -2)], "arm"), ("downstream_arm", [(9, 135)], "arm"),
+    ("both_arms", [(-179, -2), (9, 135)], "arm"),
+]
+
+
+def _shuffle_groups(sequence: str, *, seq_start0: int, groups: list[list[int]], seed: int) -> tuple[str, int]:
+    chars = list(sequence)
+    changed: set[int] = set()
+    for group_index, positions in enumerate(groups):
+        indices = [position - 1 - seq_start0 for position in positions]
+        original = [chars[index] for index in indices]
+        shuffled = original.copy()
+        for attempt in range(100):
+            shuffled = original.copy()
+            rng = np.random.default_rng(seed + 10_007 * (group_index + 1) + 1_000_000_007 * attempt)
+            rng.shuffle(shuffled)
+            if any(old != new for old, new in zip(original, shuffled, strict=True)):
+                break
+        else:
+            raise ValueError("Component cannot be changed by composition-preserving shuffling.")
+        for index, old, new in zip(indices, original, shuffled, strict=True):
+            chars[index] = new
+            if new != old:
+                changed.add(index)
+    return "".join(chars), len(changed)
+
+
+def _fig3g_positions_for_intervals(intervals: list[tuple[int, int]]) -> list[list[int]]:
+    return [[RS_POS + offset for offset in range(start, end + 1) if offset != 0] for start, end in intervals]
+
+
+def _fig3g_build_design(ref_seq: str, seq_start0: int) -> tuple[list[str], pd.DataFrame]:
+    sequences: list[str] = []
+    rows: list[dict[str, object]] = []
+    for seed in _FIG3G_SEEDS:
+        for component_index, (component, intervals, family) in enumerate(_FIG3G_COMPONENTS):
+            if component == "native":
+                background, changed_positions = ref_seq, 0
+            else:
+                background, changed_positions = _shuffle_groups(
+                    ref_seq, seq_start0=seq_start0,
+                    groups=_fig3g_positions_for_intervals(intervals),
+                    seed=seed + 1_000_003 * (component_index + 1),
+                )
+            pair: dict[str, str] = {}
+            for allele, base_value in (("REF", "G"), ("ALT", "T")):
+                sequence = _set_base(background, seq_start0, RS_POS, base_value)
+                pair[allele] = sequence
+                sequences.append(sequence)
+                rows.append({
+                    "sequence_index": len(sequences) - 1, "scramble_seed": seed, "component": component,
+                    "component_family": family, "intervals_relative": ";".join(f"{a}:{b}" for a, b in intervals),
+                    "allele": allele, "changed_positions_vs_native": changed_positions,
+                    "sequence_sha256": hashlib.sha256(sequence.encode()).hexdigest(),
+                    "motif_sequence_at_native_position": _motif_at_native_position(sequence, seq_start0),
+                })
+            differences = [i for i, (a, b) in enumerate(zip(pair["REF"], pair["ALT"], strict=True)) if a != b]
+            rs_index = RS_POS - 1 - seq_start0
+            if differences != [rs_index]:
+                raise AssertionError(f"{component}/seed{seed}: allele pair is not matched.")
+    return sequences, pd.DataFrame(rows)
+
+
+def _fig3g_retention(scored: pd.DataFrame) -> pd.DataFrame:
+    keys = ["scramble_seed", "component", "component_family", "gene"]
+    ref = scored[scored.allele.eq("REF")].copy()
+    alt = scored[scored.allele.eq("ALT")].copy()
+    paired = ref.merge(alt, on=keys, suffixes=("_ref", "_alt"), validate="one_to_one")
+    paired["delta_liver"] = paired.liver_rna_signal_alt - paired.liver_rna_signal_ref
+    native = paired[paired.component.eq("native")][["scramble_seed", "gene", "delta_liver"]].rename(
+        columns={"delta_liver": "native_delta_liver"}
+    )
+    paired = paired.merge(native, on=["scramble_seed", "gene"], validate="many_to_one")
+    paired["retention"] = paired.delta_liver.abs() / paired.native_delta_liver.abs()
+    paired["signed_retention"] = paired.delta_liver / paired.native_delta_liver
+    return paired
+
+
+def _fetch_reference(fasta_path: Path, interval: Any) -> str:
+    """True (unsubstituted) reference sequence for `interval`, asserting the
+    expected G allele at rs12740374 -- `_fig3g_build_design`/`_fig3e_build_design`
+    substitute REF/ALT explicitly, unlike `_native_t` (used by 3B/3C)."""
+    import pysam
+
+    fasta = pysam.FastaFile(str(fasta_path))
+    sequence = fasta.fetch(CHROM, int(interval.start), int(interval.end)).upper()
+    index = RS_POS - 1 - int(interval.start)
+    if sequence[index] != "G":
+        raise ValueError(f"Reference allele mismatch at rs12740374: {sequence[index]} != G")
+    return sequence
+
+
+def run_fig3g(run_dir: Path, audit: Audit, fasta_path: Path, *, batch_size: int = 32, max_workers: int = 4) -> None:
+    genome, _, _, _ = _ag()
+    interval = genome.Interval(CHROM, RS_POS, RS_POS).resize(SEQ_LEN)
+    ref_seq = _fetch_reference(fasta_path, interval)
+    with audit.step("3G: build component-necessity scramble design"):
+        sequences, design = _fig3g_build_design(ref_seq, int(interval.start))
+        out = run_dir / "derived/Figure3G_component_necessity"; out.mkdir(parents=True, exist_ok=True)
+        design.to_csv(out / "sequence_design.csv", index=False)
+    scored = _score_design(run_dir, audit, "3G", interval, sequences, design, batch_size=batch_size, max_workers=max_workers)
+    with audit.step("3G: compute retention and render"):
+        retention = _fig3g_retention(scored)
+        retention.to_csv(out / "retention_by_seed.csv", index=False)
+        summary = retention.groupby(["component", "component_family", "gene"], as_index=False).agg(
+            n_seeds=("scramble_seed", "nunique"), mean_retention=("retention", "mean"),
+            median_retention=("retention", "median"), sd_retention=("retention", "std"),
+            mean_signed_retention=("signed_retention", "mean"),
+            sign_preserved_fraction=("signed_retention", lambda x: float(np.mean(np.asarray(x) > 0))),
+        )
+        summary.to_csv(out / "summary.csv", index=False)
+        three_gene_mean = _fig3g_three_gene_mean(summary, retention)
+        three_gene_mean.to_csv(out / "Figure3G_component_necessity_three_gene_mean_source.tsv", sep="\t", index=False)
+        _render3g(three_gene_mean, run_dir / "figures/Figure3G.svg")
+
+
+def _fig3g_three_gene_mean(summary: pd.DataFrame, retention: pd.DataFrame) -> pd.DataFrame:
+    """Collapse the per-gene summary to the 3-gene-mean table Figure 3G plots
+    and the release's outputs/source_data/Figure3G_component_necessity.tsv
+    records. SEM is computed across the eight seed-level 3-gene means, not by
+    averaging the three gene-specific SEMs (matches the working archive's
+    make_panel.py)."""
+    order = [name for name, _, _ in _FIG3G_COMPONENTS]
+    frame = summary[summary.gene.isin(GENES)].copy()
+    data = frame.groupby("component", as_index=True).agg(
+        mean_retention=("mean_retention", "mean"), median_retention=("median_retention", "mean"), n_seeds=("n_seeds", "min")
+    )
+    per_seed = retention[retention.gene.isin(GENES)].groupby(["component", "scramble_seed"], as_index=False).agg(
+        retention=("retention", "mean"), n_genes=("gene", "nunique")
+    )
+    sem_by_component = per_seed.groupby("component")["retention"].agg(lambda v: v.std(ddof=1) / np.sqrt(v.count()))
+    # The true median-of-3-gene-means per seed, not the mean of the three
+    # genes' individual medians (`data["median_retention"]` above) -- matches
+    # the working archive's make_panel.py exactly.
+    median_by_component = per_seed.groupby("component")["retention"].median()
+    rows = [
+        {"model": "ALL_FOLDS", "component": component, "mean_retention": data.loc[component, "mean_retention"],
+         "sem_retention": sem_by_component.loc[component], "median_retention": median_by_component.loc[component],
+         "n_seeds": int(data.loc[component, "n_seeds"])}
+        for component in order
+    ]
+    return pd.DataFrame(rows)
+
+
+def _render3g(three_gene_mean: pd.DataFrame, output: Path) -> None:
+    order = [name for name, _, _ in _FIG3G_COMPONENTS]
+    labels = {"native": "Intact", "full_315": "Full 315", "upstream_arm": "Up", "downstream_arm": "Down", "both_arms": "Both"}
+    data = three_gene_mean.set_index("component")
+    plt.rcParams.update({
+        "font.family": "sans-serif", "font.sans-serif": ["Arial", "Helvetica Neue", "Helvetica", "DejaVu Sans"],
+        "font.size": 8.5, "axes.labelsize": 9, "xtick.labelsize": 7.2, "ytick.labelsize": 7.5, "axes.linewidth": 0.8,
+    })
+    x = np.arange(len(order), dtype=float)
+    fig, ax = plt.subplots(figsize=(87 / 25.4, 54 / 25.4))
+    fig.subplots_adjust(left=0.20, right=0.99, bottom=0.43, top=0.74)
+    means = np.array([data.loc[item, "mean_retention"] for item in order])
+    sems = np.array([data.loc[item, "sem_retention"] for item in order])
+    ax.errorbar(x, means, yerr=sems, fmt="o", color="#2478b5", markersize=4.4, linewidth=0, elinewidth=0.9, capsize=1.8, zorder=4)
+    ax.axhline(1, color="#777777", linestyle=":", linewidth=0.9); ax.axhline(0, color="#bbbbbb", linewidth=0.65)
+    ax.set_xticks(x, [labels.get(item, item) for item in order])
+    ax.tick_params(axis="x", labelsize=6.5, pad=7)
+    plt.setp(ax.get_xticklabels(), rotation=90, ha="center", va="top", rotation_mode="anchor")
+    ax.set_ylabel("Mean RNA retention\n(3 genes)", fontsize=8.5, labelpad=3)
+    ax.set_ylim(-0.04, 1.10); ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", color="#dddddd", linewidth=0.5); ax.set_axisbelow(True)
+    _save_svg(fig, output)

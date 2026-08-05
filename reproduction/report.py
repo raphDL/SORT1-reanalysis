@@ -304,11 +304,33 @@ def compare_fig3c(run_dir: Path) -> dict[str, object]:
     }
 
 
+def compare_fig3g(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure3G_component_necessity/Figure3G_component_necessity_three_gene_mean_source.tsv"
+    reference = REFERENCE_ROOT / "Figure3G_component_necessity.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(reference, sep="\t")
+    keys = ["model", "component"]
+    columns = ["mean_retention", "median_retention", "sem_retention"]
+    joined = got[keys + columns + ["n_seeds"]].merge(
+        want[keys + columns + ["n_seeds"]], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one"
+    )
+    # n_seeds is constant (=8) by construction; a Pearson correlation is
+    # undefined for a zero-variance column, so compare it by plain equality.
+    n_seeds_exact = bool(joined.n_seeds_generated.eq(joined.n_seeds_reference).all())
+    results = {column: _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=0.0, atol=5e-3, min_pearson=0.99) for column in columns}
+    return {
+        "pass": len(joined) == 12 and n_seeds_exact and all(item["pass"] for item in results.values()),
+        "rows": len(joined), "n_seeds_exact": n_seeds_exact, "values": results,
+    }
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
-    "3B": compare_fig3b, "3C": compare_fig3c,
+    "3B": compare_fig3b, "3C": compare_fig3c, "3G": compare_fig3g,
 }
 
 
@@ -425,6 +447,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "2F": ("Kircher 2019 MPRA + AlphaGenome API", "ALL_FOLDS"),
         "3B": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
         "3C": ("Figure 3B outputs + JASPAR 2024 CORE + GRCh38", "none (local PWM scan)"),
+        "3G": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)
