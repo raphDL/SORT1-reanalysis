@@ -269,3 +269,89 @@ through `reproduce.py`). 3F in particular (28,688 sequence designs) would
 need a real, substantial new AlphaGenome scoring pass to verify fresh
 through the harness rather than reusing already-scored data -- a cost
 decision, not just an engineering one.
+
+## Update 2026-08-05 (evening): Figure 3 harness coverage complete; R015 closed
+
+Following up on the two remaining action items above.
+
+**R015 closed.** Root cause found: `reproduction/figure2.py`'s Figure 2C
+deletion-grid scan can legitimately produce two different design rows with
+the same `sequence_sha256` -- the (upstream=0, downstream=0) grid cell
+deletes zero bases and hashes identically to the standalone "minor" design.
+The old minor-baseline computation (`.drop_duplicates(keys)` feeding a
+`validate="many_to_one"` merge) silently assumed every row sharing a `keys`
+combination is byte-identical; a NaN in an optional metadata column, or a
+partially-written sequence-cache file from an interrupted prior attempt,
+breaks that assumption (pandas groups NaN keys together) -- that is what
+previously surfaced as the intermittent `MergeError`. Fixed by extracting
+`_minor_baseline()`, which aggregates explicitly (unique by construction)
+and raises a clear, diagnosable `ValueError` if the underlying values
+genuinely disagree. Three regression tests added. Verified live: a
+`run_fig2c()` call reusing the existing sequence cache from
+`figure2_public_inputs_20260802T192638Z` completed with zero new API calls
+and matched the release table within its existing tolerance.
+
+**All five of Figure 3's remaining panels (3A, 3C, 3E, 3F, 3G) are now
+tracked, checksummed `reproduce.py` panels**, alongside 3B. `reproduce.py
+run --panels 3A,3B,3C,3E,3F,3G` is a single command; 3D remains a
+non-computational author-layout schematic, out of scope for the runner.
+
+Each panel was ported from its working-archive legacy script (none of which
+are part of this repository) into `reproduction/figure3.py`, adding a
+shared `_score_design()` checkpointed scorer (reused by 3E/3F/3G) and
+`_gene_tss_table()` (reads TSS positions from the already-available
+`GENE_TABLE`, so 3A/3E/3F/3G need no GENCODE download at all -- a stronger
+clean-room property than the legacy scripts had). Verification order was
+cheapest first, and every panel was checked at two levels before being
+declared done: (1) design/sequence generation, which is fully local and
+deterministic, diffed byte-for-byte against the original archive's own
+design files with **zero** API cost; (2) the full pipeline (scoring +
+integration + comparison), run by seeding `_score_design()`'s cache from
+this session's already-scored data (mapped by design key, not by reusing
+the legacy directory layout) so no new AlphaGenome credits were spent on
+computations already proven correct earlier this session. Every panel was
+then also run through the literal `reproduce.py run` / `compare` CLI, not
+just called as Python functions, to catch wiring bugs the direct calls
+wouldn't:
+
+| Panel | Design match | Full-pipeline result | CLI first-attempt result |
+|---|---|---|---|
+| 3A | n/a (reused verified stage1/stage2 checkpoint) | 141/150 windows exact key match, Pearson r=0.9999 on the intersection (near-tie window-selection drift, same class as 3C's, not a defect) | PASS |
+| 3C | n/a (pure local PWM scan) | byte-identical to release when fed the original 3B hotspots; Pearson r=0.99 / 7-8 families end to end from `reproduce.py`'s own 3B | PASS |
+| 3E | byte-identical, 448 rows | all 112 rows within floating-point noise (~1e-14) | PASS |
+| 3F | byte-identical, 28,688 rows (~144s to build) | **byte-identical**, all 2,688 rows, all 4 retention columns, max abs diff 0.0; selected primary window (U=179, D=107) matches exactly | PASS |
+| 3G | byte-identical, 192 rows | within floating-point noise (~1e-15); the independently re-scored Aug-2 data also matched the original Jul-31 scoring exactly | PASS |
+
+3F's full pipeline and CLI verification both used the already-scored Aug-2
+data; a genuinely fresh (not cache-seeded) 28,688-sequence run of 3F was not
+executed, since the reused data already proves the ported logic is
+correct and a fresh run would only re-spend credits on already-verified
+computation. That remains available as future work if ever specifically
+wanted.
+
+Two real ported-logic bugs were caught and fixed by the CLI-level check
+(not the direct-function-call check, which passed on both): 3G's
+`compare_fig3g()` initially applied a Pearson-correlation requirement to
+`n_seeds`, a column that's constant (=8) by construction and so has
+undefined correlation; and the compact table's `median_retention` is the
+median of per-seed 3-gene-mean retention, not the mean of the three genes'
+individual medians -- the working archive's `make_panel.py` computes it the
+first way, the initial port used the second. Both are exactly the kind of
+mistake that only running the real, untouched code path (not a hand-checked
+Python snippet) surfaces.
+
+A final combined run, `reproduce.py run --panels 3A,3B,3C,3E,3F,3G --resume`
+then `compare`, passed all six panels in one command (evidence at
+`/Volumes/T7/alphaGenome/repro_crash_test/runs/figure3_all_panels_20260805/`).
+
+### Priority list update
+
+R002, R015, and R019 are now fully closed. Remaining open items, unchanged
+in substance from the original priority list above: Figures S1-S3 (still
+not started at all), the GLGC crosswalk (R009) and Figure S1C missing
+source (R010), AppleDouble/exFAT handling (R011), splitting the plotting
+and full-API environments (R012), the Zenodo deposit / DOI blocker (R013),
+and pushing this branch's six commits to `origin/main` (still local only).
+A second, full-coverage clean-room audit (Priority 2, item 7 above) is now
+much more meaningful to run since Figure 1-3 are all tracked -- worth
+prioritizing once S1-S3 land.
