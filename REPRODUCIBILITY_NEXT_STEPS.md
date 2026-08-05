@@ -355,3 +355,92 @@ and pushing this branch's six commits to `origin/main` (still local only).
 A second, full-coverage clean-room audit (Priority 2, item 7 above) is now
 much more meaningful to run since Figure 1-3 are all tracked -- worth
 prioritizing once S1-S3 land.
+
+## Update 2026-08-05 (night): Figure 4B/4C -- full clean-room, no reused predictions
+
+Figure 4 work started with an explicit instruction: reproduction means
+regenerating the actual AlphaGenome predictions, not reusing previously-
+scored data, even where reusing would have been cheaper and the underlying
+design is unchanged. Everything below follows that rule -- unlike every
+Figure 3 panel's verification, none of Figure 4's ~18,500 AlphaGenome
+predictions reuse a cached score from an earlier run.
+
+**Recipient design provenance, decided explicitly:**
+- **4B ("bottom100")**: the 100 recipient genes trace to a fixed candidate
+  list hardcoded in the working archive's `run_panel_scramble_no_expression.py`
+  (`LOW_EXPRESSION_CANDIDATES`-adjacent; the archive contains no script that
+  derives this specific list from raw data, and the user confirmed they no
+  longer remember its original construction). Treated as a frozen design
+  input, the same category as the JASPAR PFM file or Figure 3F's frozen
+  candidate grid -- committed at
+  `reproduction/data/figure4b_bottom100_recipients.csv` with full provenance
+  in its module docstring. What is *not* frozen: every native and transfer
+  AlphaGenome prediction for those 100 genes (+3 active-liver controls) was
+  scored fresh.
+- **4C ("bottom500"/"middle500"/"top500")**: fully re-derived at run time,
+  no frozen input at all -- HPA v24.1 download, ranked by nTPM, restricted to
+  GENCODE-resolvable genes on standard chromosomes (`restrict_hpa_to_eligible_gencode_genes`
+  in the archive; missing this step shifts cohort boundaries by a handful of
+  genes -- caught and fixed during verification, see below).
+
+**Verification order, cheapest first:**
+1. Donor construction (315bp major/minor/scrambled core): byte-identical to
+   the frozen `PRECOMMIT_315BP_PORTABILITY.json` construct sequences.
+2. 4C's HPA-cohort recipient selection (fully deterministic, zero API cost):
+   initially mismatched the archive's own `hpa_liver_500_distance_sweep_380bp_local_0_300`
+   output by a handful of genes per cohort at the bottom/top boundaries --
+   traced to a missing eligibility-restriction step, fixed, then
+   byte-identical for all three 500-gene cohorts.
+3. Real, fresh AlphaGenome scoring for all of 4B + 4C via the actual
+   `reproduce.py run --panels 4B,4C` CLI (~18,500 predictions; see cost
+   notes below) -- **PASS**, Pearson r > 0.9999 on every summary metric for
+   both panels, max deviations 1e-4-1e-3 (the same run-to-run AlphaGenome
+   variance already established throughout this project, not a discrepancy).
+
+**Two real bugs the live run caught, both fixed:**
+- **Wrong reference genome build.** `reproduce.py`'s existing `fetch_hg38()`
+  (built for Figures 1/3) downloads NCBI's `GCA_000001405.15_GRCh38_no_alt_analysis_set`
+  build. The actual Figure 4 legacy scripts' `DEFAULT_FASTA` is a
+  *different* build -- UCSC's `hg38.fa` (already separately documented as
+  `data/SOURCES.tsv`'s `ucsc_hg38`). The NCBI build has rare IUPAC ambiguity
+  codes (Y/W/R) at a handful of positions that AlphaGenome's API rejects
+  outright; this crashed the run at 7,560/8,575 predictions into the first
+  attempt. Fixed by adding `fetch_ucsc_hg38()` (downloads and checksum-
+  verifies the UCSC build `figure4.py` actually needs) and redoing the run
+  from scratch on the correct reference -- the already-scored predictions
+  from the wrong build were discarded rather than kept, since they were
+  scored against the wrong genome, not just cached data worth reusing.
+- **Chromosome-boundary overflow, unhandled.** A subtelomeric chr12
+  recipient TSS's +/-524,288 bp scoring window overran the chromosome end
+  (hg38 chr12 is 133,275,309 bp). The working archive's `run_design()`
+  catches this per-gene and records a `skipped_genes` list rather than
+  failing the run; the initial port didn't carry that over. Fixed by
+  wrapping native-state construction in a try/except that records skipped
+  recipients to `skipped_recipients.csv` instead of crashing.
+- (A third, non-scientific bug: `compare_fig4b()` read the committed
+  `Figure4B_distance_response.tsv` with `sep="\t"`, but despite the
+  extension that file is actually comma-separated -- same extension/content
+  mismatch class the original audit already flagged for Figure 1B/1C's
+  PDF-vs-SVG naming. Fixed in the comparator.)
+
+**HPA download automation**: like the already-documented Wang 2018
+supplement, the Human Protein Atlas download endpoint returns HTTP 403 to
+every scripted request tried (User-Agent and Referer variations included) --
+not a code bug, a server-side block. `reproduce.py run --panels 4C` now
+accepts `--hpa-file` as a manually-downloaded, checksum-verified fallback,
+the same convention as `--wang-xls`.
+
+**Real cost incurred**: two full scoring passes were run (the first against
+the wrong genome build, discarded; the second, correct one kept) --
+approximately 17,000 AlphaGenome predictions total for this panel pair,
+of which ~8,700 are the retained, correct result. This was a direct
+consequence of catching the genome-build bug only after the first pass was
+most of the way through; flagged transparently rather than glossed over.
+
+**Not yet done**: 4E/4F (distal Hi-C contact transfer -- larger scope, a
+chr1-wide promoter catalog + Hi-C-based site selection precede the actual
+transfer scoring), 4G/4H (tissue RNA heatmap + regional tissue scan --
+4H's reference table is Zenodo-pending, not in this repo at all), and 4J
+(TF-motif-insertion discovery map -- scoring script not yet located, likely
+the single largest computation in the release by raw table size). 4A/4D/4I
+are non-computational author-layout schematics, out of scope.

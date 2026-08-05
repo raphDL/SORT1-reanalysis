@@ -42,13 +42,15 @@ from reproduction.figure2 import (
     run_fig2f,
 )
 from reproduction.figure3 import run_fig3a, run_fig3b, run_fig3c, run_fig3e, run_fig3f, run_fig3g
+from reproduction.figure4 import run_fig4b, run_fig4c
 from reproduction.report import compare_run, write_report
 
 
 FIGURE1_PANELS = ["1B", "1C", "1D", "1E", "1F"]
 FIGURE2_PANELS = ["2B", "2C", "2E", "2F"]
 FIGURE3_PANELS = ["3A", "3B", "3C", "3E", "3F", "3G"]
-SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS
+FIGURE4_PANELS = ["4B", "4C"]
+SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
 
@@ -62,7 +64,12 @@ def parse_panels(value: str) -> list[str]:
 
 
 def default_run_dir(panels: list[str] | None = None) -> Path:
-    figure = "figure3" if panels and set(panels).issubset(FIGURE3_PANELS) else "figure2" if panels and set(panels).issubset(FIGURE2_PANELS) else "reproduction"
+    figure = (
+        "figure4" if panels and set(panels).issubset(FIGURE4_PANELS)
+        else "figure3" if panels and set(panels).issubset(FIGURE3_PANELS)
+        else "figure2" if panels and set(panels).issubset(FIGURE2_PANELS)
+        else "reproduction"
+    )
     stamp = datetime.now(timezone.utc).strftime(f"{figure}_%Y%m%dT%H%M%SZ")
     return REPO_ROOT / "reproduction_runs" / stamp
 
@@ -198,6 +205,12 @@ def run(args: argparse.Namespace) -> int:
         if "3F" in args.panels:
             with audit.step("3F: wide-main-panel 1bp boundary grid"):
                 run_fig3f(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "4B" in args.panels:
+            with audit.step("4B: bottom100 315bp donor eight-distance sweep"):
+                run_fig4b(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "4C" in args.panels:
+            with audit.step("4C: HPA bottom/middle/top-500 cohort fold-change at 30bp"):
+                run_fig4c(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers, hpa_file=args.hpa_file)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)
@@ -296,6 +309,11 @@ def main() -> None:
     run_parser.add_argument(
         "--wang-xls", type=Path, default=None,
         help="Manually downloaded original atv310103_ds.xls if the publisher blocks automation.",
+    )
+    run_parser.add_argument(
+        "--hpa-file", type=Path, default=None,
+        help="Manually downloaded HPA v24.1 rna_tissue_consensus.tsv if the "
+             "portal blocks automation (checksum-verified against data/SOURCES.tsv).",
     )
     run_parser.add_argument(
         "--max-variants",
