@@ -16,6 +16,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+.env
+ALPHAGENOME_API_KEY.txt
+reproduction_runs/
 
 # Temporary figure products
 figures/rendered/*.png

@@ -15,16 +15,17 @@ Supplementary numbering is final as Figure S1–S10 and is recorded in
 `MANIFEST.tsv`. `manuscript/SUBMISSION_SNAPSHOT_SHA256.tsv` provides the
 byte-level checksum manifest for the frozen text, tables and assembled SVGs.
 
-Compact source data (with SHA-256 checksums) has been copied into
+Frozen publication-reference data (with SHA-256 checksums) is stored under
 `outputs/source_data/` for every selected panel with a cached compact output;
-the only remaining exceptions are four Zenodo-pending large tables. Figure 1B
-was regenerated once from the authorized API and now has frozen numerical
-arrays plus track-selection metadata.
+the only remaining exceptions are four Zenodo-pending large tables. These
+tables support deterministic rendering and post-run comparison, but are not
+inputs to the clean-room analysis runner.
 Deterministic rendering scripts (`figures/fig*.py`) are ported for Figure 1C–F,
 Figure 2B/C/E/F, Figure 3E–G, and the split Figure S5 panels B–C. These scripts
 were test-rendered from the frozen compact tables without network or API
-access. Figure 1B was recovered through a one-time authorized numerical export
-because its legacy script did not persist the track arrays. See
+access. The initial Figure 1B reference was recovered through an authorized
+numerical export because its legacy script did not persist the track arrays;
+the clean-room runner can now regenerate it independently. See
 `MANIFEST_NOTES.md` for the exact legacy generator for every panel. The working
 archive is intentionally not copied wholesale—only files needed to reproduce
 a reported result or render a published panel enter this repository.
@@ -35,6 +36,8 @@ a reported result or render a published panel enter this repository.
   small curated input tables that cannot be fetched automatically.
 - `analysis/` — scripts that generate compact panel-level source tables from
   public inputs or AlphaGenome predictions (not all panels have one yet).
+- `reproduction/` plus `reproduce.py` — isolated analysis, public-input
+  download, timing, checksum, comparison, and audit-report machinery.
 - `figures/` — deterministic rendering entry points as they are ported,
   author-approved editable composites in `figures/assembled/`, and
   checksummed canonical panel exports in `figures/rendered/`. The intended
@@ -89,7 +92,165 @@ repository on its own). Add `--require-release-assets` to additionally fail
 on any selected panel still missing its rendered asset or source table. This
 strict command, not the default structural check, is the public-release gate.
 
-## Regenerating a figure
+## Reproducing Figure 1 analyses from scratch
+
+The clean-room entry point regenerates analytical outputs without reading the
+committed tables under `outputs/source_data/`. For the first supported vertical
+slice it reproduces Figure 1B, Figure 1C's middle column, and Figure 1E:
+
+- **Figure 1B:** one AlphaGenome `ALL_FOLDS` locus-track prediction;
+- **Figure 1C middle:** reconstruct the 111 variants from the full GLGC 2013
+  download, the UCSC hg19-to-hg38 chain (from a checksum-identical public
+  mirror), and the NCBI GRCh38 no-alt analysis-set FASTA, then run the
+  recommended AlphaGenome RNA exon-mask scorer for every variant;
+- **Figure 1E:** one held-out AlphaGenome `FOLD_0` contact-map prediction.
+
+Create a credential file locally (it is ignored by git):
+
+```bash
+cp .env.example .env
+# Edit .env and replace the placeholder with your authorized key.
+python reproduce.py doctor
+```
+
+Alternatively, use the visible text-file template (useful in Finder):
+
+```bash
+cp ALPHAGENOME_API_KEY.example.txt ALPHAGENOME_API_KEY.txt
+# Edit ALPHAGENOME_API_KEY.txt, keeping the ALPHAGENOME_API_KEY="..." format.
+python reproduce.py doctor
+```
+
+`ALPHAGENOME_API_KEY.txt` is also ignored by Git and is discovered
+automatically. Use either it or `.env`; neither credential value is printed or
+written to an audit report.
+
+Start each audit in a new, empty directory. A removable disk may be used for
+downloads and run products while the Conda environment remains on an APFS disk:
+
+```bash
+# Optional: download and validate public inputs before an API key is available.
+python reproduce.py prepare \
+  --run-dir /Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_clean
+
+python reproduce.py run \
+  --panels 1B,1C,1D,1E,1F \
+  --run-dir /Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_clean \
+  --resume
+
+python reproduce.py compare \
+  --run-dir /Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_clean
+```
+
+`run` refuses a non-empty directory unless `--resume` is supplied. Interrupted
+Figure 1C batches are checkpointed. The run records input URLs and checksums,
+package and Git versions, model regimes, request units, retries, timings, peak
+RSS, disk use, and generated-file hashes in `audit/run.json` and
+`audit/REPRODUCIBILITY_REPORT.md`. The API key itself is never recorded.
+
+Only `compare` reads the frozen publication tables. It applies explicit numeric
+tolerances and updates the report with a per-panel PASS/FAIL result. Supplying
+`--max-variants` is available for development smoke tests, but such a partial
+Figure 1C run cannot pass the publication comparison.
+
+For a key file stored elsewhere, place the global option before the subcommand.
+Both a raw key and an `ALPHAGENOME_API_KEY="..."` assignment are accepted:
+
+```bash
+python reproduce.py --api-key-file /secure/path/alphagenome.key doctor
+```
+
+This reconstructs Figure 1C-left from GTEx v7 liver cis-eQTLs, Figure 1C-right
+from phased 1000 Genomes EUR haplotypes, and Figure 1D/1F from public
+4DNFICSTCJQZ HepG2 Hi-C. The runner downloads GTEx (about 3.4 GB), uses
+`bcftools` remote region access for the much larger chromosome-1 VCF, and uses
+HTTP byte-range access for the 14.7-GB `.hic` file. Users who prefer explicit
+downloads can supply the original files:
+
+```bash
+python reproduce.py run --panels 1B,1C,1D,1E,1F \
+  --gtex-file /data/Liver.allpairs.txt.gz \
+  --onekg-vcf /data/1kgp_chr1_sort1.vcf.gz \
+  --onekg-panel /data/integrated_call_samples_v3.20130502.ALL.panel \
+  --hic-file /data/4DNFICSTCJQZ.hic \
+  --run-dir /data/figure1_clean
+```
+
+The supplied VCF may be the full phased chr1 release or a `bcftools view`
+interval covering `chr1:109209432-109340504`; keep its `.tbi` alongside it.
+Checksums, source URLs, byte counts, and whether remote range access was used
+are recorded in the audit. Figure 1A remains an author-layout schematic.
+
+## Reproducing Figure 2 analyses from scratch
+
+Figure 2B, 2C, 2E, and 2F are supported by the same isolated runner. Figure
+2A and 2D are literature schematics rather than computational panels.
+
+## Reproducing Figure 3 analyses from scratch
+
+Figure 3B is now supported as a checkpointed clean-room AlphaGenome run. It
+constructs the intact rs12740374-T sequence from downloaded GRCh38, predicts
+the intact baseline and every three-way substitution across the 501-bp native
+locus, and derives the three-gene positional loss profile and hotspots without
+reading publication tables:
+
+```bash
+python reproduce.py --api-key-file /secure/path/alphagenome.key run \
+  --panels 3B --batch-size 24 --max-workers 4 \
+  --run-dir /data/figure3_clean
+python reproduce.py compare --run-dir /data/figure3_clean
+```
+
+Figure 3C is a deterministic downstream JASPAR 2024 analysis of the newly
+generated 3B substitutions. Figure 3A and 3E--G are larger AlphaGenome screens
+and are being ported to the same clean-room runner. Figure 3D is an
+author-layout schematic.
+
+- **2B:** reconstruct 50 unique repair products from the original Wang et al.
+  spreadsheet, place them on the rs12740374-T background, and predict liver
+  RNA for each complete edited sequence;
+- **2C:** construct all 121 upstream-by-downstream deletion geometries from
+  downloaded GRCh38 and predict each complete sequence;
+- **2E:** download the Kircher et al. release and score 1,798 substitutions on
+  the rs12740374-T construct background for HepG2 RNA, ATAC, and H3K27ac;
+- **2F:** apply the prespecified barcode filter and score cell-line-matched
+  DNase (six elements) and ATAC (four elements).
+
+The Kircher file downloads automatically from an immutable upstream Git
+commit. The Wang publisher currently places its spreadsheet download behind
+bot protection. If automatic preparation reports that problem, download the
+original `atv310103_ds.xls` from DOI `10.1161/ATVBAHA.117.310103`; the runner
+accepts it only if its SHA-256 is
+`99a2d4218e3e3a9afdd04ecded3a38878c001272f42eaadc99b8c3caeeefa049`.
+
+```bash
+python reproduce.py --api-key-file /secure/path/alphagenome.key prepare \
+  --panels 2B,2C,2E,2F \
+  --wang-xls /path/to/atv310103_ds.xls \
+  --run-dir /Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_clean
+
+python reproduce.py --api-key-file /secure/path/alphagenome.key run \
+  --panels 2B,2C,2E,2F \
+  --wang-xls /path/to/atv310103_ds.xls \
+  --run-dir /Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_clean \
+  --resume
+
+python reproduce.py compare \
+  --run-dir /Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_clean
+```
+
+The audit distinguishes actual API requests from scored units (complete
+sequences or variant/modality scores), checkpoints every batch, and reports
+per-panel numerical PASS/FAIL against the frozen publication outputs only in
+the final `compare` stage. The comparison requires exact sequence/variant
+identities and row counts. It reports strict differences for every numerical
+field and uses prespecified panel-unit equivalence bounds for live API outputs
+(plus correlation requirements), because repeated remote inference can show
+small floating-point drift. The exact thresholds and every observed maximum
+difference are written to `audit/comparison.json`; they are never silently
+rounded away.
+
+## Rendering from frozen publication tables
 
 ```
 python figures/fig1.py            # renders Fig. 1C–F
@@ -98,20 +259,24 @@ python figures/fig3.py            # renders the currently-ported Fig3 panels (E,
 python figures/fig3.py --panel G  # renders a single panel
 ```
 
-Figure scripts are pure, deterministic plotting from the compact tables in
+These figure scripts are pure, deterministic plotting from the compact tables in
 `outputs/source_data/` — no AlphaGenome API calls, no public-data downloads,
 no network access. Panels not yet ported (see above) must currently be
 rendered from their legacy script in the working archive.
 
 ## Reproducibility model
 
-The release separates two stages:
+The release separates three stages:
 
-1. **Analysis** — potentially expensive AlphaGenome/API or public-data
-   processing that writes a compact, versioned source table into
-   `outputs/source_data/`.
+1. **Clean-room analysis** — potentially expensive AlphaGenome/API or
+   public-data processing that writes new predictions and derived tables into
+   an isolated run directory. It never writes into or reads from the frozen
+   publication-reference tables.
 2. **Rendering** — deterministic plotting from that compact source table,
-   requiring no API access (`figures/fig*.py`).
+   requiring no API access.
+3. **Comparison** — an explicitly separate post-run operation that may read
+   `outputs/source_data/` to test the new numerical results against the frozen
+   publication reference.
 
 Each published panel is mapped to its analysis script, rendering script,
 source table, model regime, external datasets, and working-archive source in
@@ -130,10 +295,11 @@ checkout used for the current analysis was:
 - `alphagenome`: `327ea82371197812b337aed8e9e75df63ce5e429`
 - `alphagenome_research`: `bb6a5276a51199d9589fc8929be6a9d946b7250b`
 
-Figure 1B locus RNA-seq/CHIP-TF/DNase/ATAC arrays were regenerated once using
-the ALL_FOLDS model and are now cached with their selected-track metadata and
-hashes. The refactored exporter reads credentials only from the environment;
-the hardcoded fallback discovered in the legacy working script was not copied.
+The frozen Figure 1B reference contains locus RNA-seq/CHIP-TF/DNase/ATAC arrays
+and selected-track metadata. `reproduce.py` regenerates those arrays from the
+API in a new run directory. Credentials are read from `.env`, the process
+environment, or an explicitly supplied one-line key file; the hardcoded
+fallback discovered in the legacy working script was not copied.
 
 ## Data and code availability
 
