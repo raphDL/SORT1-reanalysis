@@ -44,13 +44,14 @@ from reproduction.figure2 import (
 from reproduction.figure3 import run_fig3a, run_fig3b, run_fig3c, run_fig3e, run_fig3f, run_fig3g
 from reproduction.figure4 import run_fig4b, run_fig4c
 from reproduction.figure4ef import run_fig4ef
+from reproduction.figure4g import run_fig4g
 from reproduction.report import compare_run, write_report
 
 
 FIGURE1_PANELS = ["1B", "1C", "1D", "1E", "1F"]
 FIGURE2_PANELS = ["2B", "2C", "2E", "2F"]
 FIGURE3_PANELS = ["3A", "3B", "3C", "3E", "3F", "3G"]
-FIGURE4_PANELS = ["4B", "4C", "4E", "4F"]
+FIGURE4_PANELS = ["4B", "4C", "4E", "4F", "4G"]
 SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -217,6 +218,8 @@ def run(args: argparse.Namespace) -> int:
             if not done_marker.exists():
                 with audit.step("4E/4F: chr1 Hi-C-guided distal-contact 315bp T/G transfer benchmark"):
                     run_fig4ef(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "4G" in args.panels:
+            run_fig4g(args.run_dir, audit)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)

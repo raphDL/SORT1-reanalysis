@@ -499,13 +499,33 @@ def compare_fig4f(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == 25 and all(item["pass"] for item in results.values()), "rows": len(joined), "values": results}
 
 
+def compare_fig4g(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure4G_tissue_rna/Figure4G_tissue_rna.tsv"
+    reference = REFERENCE_ROOT / "Figure4G_tissue_rna.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(reference, sep="\t")
+    joined = got.merge(want, on="context", suffixes=("_generated", "_reference"), validate="one_to_one")
+    columns = ["SORT1", "PSRC1", "CELSR2"]
+    # A single variant, single API call, no bootstrap resampling -- deviation
+    # from the archived run should be ordinary AlphaGenome run-to-run float
+    # precision (established elsewhere in this project at 1e-4-1e-3), so a
+    # tight tolerance is meaningful here, unlike the bootstrap-based panels.
+    results = {
+        column: _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=0.0, atol=0.01, min_pearson=0.999)
+        for column in columns
+    }
+    return {"pass": len(joined) == 7 and all(item["pass"] for item in results.values()), "rows": len(joined), "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
     "3A": compare_fig3a, "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e,
     "3F": compare_fig3f, "3G": compare_fig3g, "4B": compare_fig4b, "4C": compare_fig4c,
-    "4E": compare_fig4e, "4F": compare_fig4f,
+    "4E": compare_fig4e, "4F": compare_fig4f, "4G": compare_fig4g,
 }
 
 
@@ -632,6 +652,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "4C": ("GRCh38 + HPA v24.1 + GENCODE v46 + AlphaGenome API", "ALL_FOLDS"),
         "4E": ("GRCh38 + GENCODE v46 + 4DN HepG2 Hi-C + AlphaGenome API", "ALL_FOLDS"),
         "4F": ("GRCh38 + GENCODE v46 + 4DN HepG2 Hi-C + AlphaGenome API (shares 4E's run)", "ALL_FOLDS"),
+        "4G": ("AlphaGenome API (single variant, RNA_SEQ scorer)", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)

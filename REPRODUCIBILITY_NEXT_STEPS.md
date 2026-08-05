@@ -541,3 +541,31 @@ reference table is Zenodo-pending, not in this repo at all) and 4J
 (TF-motif-insertion discovery map -- scoring script not yet located, likely
 the single largest computation in the release by raw table size). 4A/4D/4I
 remain non-computational author-layout schematics, out of scope.
+
+## Update 2026-08-05 (later night): Figure 4G -- rs12740374 tissue-RNA
+## panel, full clean-room, one AlphaGenome call
+
+Unlike 4B-4F, 4G is a single, small AlphaGenome computation: one variant
+(rs12740374, G>T), one 1,048,576bp interval, one `score_variants` call with
+the RNA_SEQ `RECOMMENDED_VARIANT_SCORERS` scorer, filtered client-side to 10
+ontology tracks and displayed for 7 (liver, adipose [derived mean of subQ +
+visceral], spleen, lung, brain, heart, kidney). Ported from the working
+archive's `results/figure1/panel_b/heatmap_all_ontologies/
+run_panel_b_heatmap_all_ontologies.py` into `reproduction/figure4g.py`
+(the archive script also scores a second, unrelated variant used elsewhere
+in the archive and not needed for this panel -- not ported). Wired into
+`reproduce.py`'s `4G` panel and `report.py`'s `compare_fig4g`.
+
+Ran via the actual `reproduce.py run --panels 4G` CLI on T7 -- **PASS**,
+max deviation 0.0035 (RNA delta values run roughly -0.08 to +0.6), Pearson
+r > 0.999 on all three genes -- tight enough that the comparator's
+tolerance was tightened from an initial generous guess (`atol=0.05`) down
+to `atol=0.01` after seeing the real margin, since a single non-bootstrapped
+prediction warrants a stringent check unlike 4E/4F's cluster-bootstrap
+panels. One AlphaGenome API call total for this panel.
+
+**Not yet done**: 4H (regional tissue ISM scan -- reference table is
+Zenodo-pending, not in this repo at all; approach not yet decided) and 4J
+(TF-motif-insertion discovery map -- scoring script not yet located, likely
+the single largest computation in the release by raw table size). 4A/4D/4I
+remain non-computational author-layout schematics, out of scope.
