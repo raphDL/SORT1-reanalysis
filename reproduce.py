@@ -41,13 +41,13 @@ from reproduction.figure2 import (
     run_fig2e,
     run_fig2f,
 )
-from reproduction.figure3 import run_fig3b, run_fig3c, run_fig3e, run_fig3g
+from reproduction.figure3 import run_fig3a, run_fig3b, run_fig3c, run_fig3e, run_fig3g
 from reproduction.report import compare_run, write_report
 
 
 FIGURE1_PANELS = ["1B", "1C", "1D", "1E", "1F"]
 FIGURE2_PANELS = ["2B", "2C", "2E", "2F"]
-FIGURE3_PANELS = ["3B", "3C", "3E", "3G"]
+FIGURE3_PANELS = ["3A", "3B", "3C", "3E", "3G"]
 SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -192,6 +192,9 @@ def run(args: argparse.Namespace) -> int:
         if "3E" in args.panels:
             with audit.step("3E: directional single-arm motif-protected recovery"):
                 run_fig3e(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "3A" in args.panels:
+            with audit.step("3A: 100kb regional two-stage RNA(TSS) ISM scan"):
+                run_fig3a(args.run_dir, audit, figure3_fasta)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)

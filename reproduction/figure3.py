@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
@@ -793,3 +794,241 @@ def run_fig3e(run_dir: Path, audit: Audit, fasta_path: Path, *, batch_size: int 
         three_gene_source = _fig3e_three_gene_source(retention)
         three_gene_source.to_csv(out / "Figure3E_directional_scramble_recovery_three_gene_source.tsv", sep="\t", index=False)
         _render3e(three_gene_source, run_dir / "figures/Figure3E.svg")
+
+
+# --- Figure 3A: 100 kb regional two-stage RNA(TSS) ISM scan ---------------
+#
+# Stage 1 (coarse): 10 bp complement-perturbation sliding window across
+# rs12740374 +/- 50 kb, scored for RNA(TSS) delta in liver + 2 adipose depots.
+# Stage 2 (fine): rank stage-1 windows per gene by |liver - adipose_mean|,
+# pick the top 50 non-overlapping windows/gene, full SNV scan within them.
+# Ported from the working archive's sort1_figure_2e_100kb_rna_ism.py (not
+# part of this repository). See REPRODUCIBILITY_NEXT_STEPS.md R018/R019.
+
+_FIG3A_TISSUE_TERMS = {
+    "liver": [LIVER], "adipose_subcutaneous": ["UBERON:0002190"], "adipose_visceral_omentum": ["UBERON:0010414"],
+}
+_FIG3A_PLOTTED_TISSUES = ["liver", "adipose_subcutaneous", "adipose_visceral_omentum", "adipose_mean"]
+_FIG3A_ALL_TERMS = sorted({t for terms in _FIG3A_TISSUE_TERMS.values() for t in terms})
+_BASE_COMPLEMENT = {"A": "T", "T": "A", "C": "G", "G": "C"}
+_FIG3A_HALF_WIDTH_BP = 50_000
+_FIG3A_WINDOW_BP, _FIG3A_STEP_BP = 10, 5
+_FIG3A_TSS_HALF_WIDTH_BP = 2_000
+_FIG3A_TOP_WINDOWS_PER_GENE = 50
+_FIG3A_STAGE1_BATCH_SIZE, _FIG3A_STAGE2_BATCH_SIZE = 16, 64
+
+
+def _fig3a_mean_track_signal(track_data: Any, *, interval: Any, center_pos_1based: int, half_width_bp: int, ontology_terms: list[str]) -> float:
+    if track_data is None:
+        return float("nan")
+    region_start = max(int(interval.start), int(center_pos_1based - half_width_bp))
+    region_end = min(int(interval.end), int(center_pos_1based + half_width_bp + 1))
+    if region_end <= region_start:
+        return float("nan")
+    genome, _, _, _ = _ag()
+    region = genome.Interval(chromosome=CHROM, start=region_start, end=region_end)
+    sliced = track_data.slice_by_interval(region, match_resolution=True)
+    if sliced is None:
+        return float("nan")
+    values = np.asarray(sliced.values, dtype=float)
+    if values.ndim == 1:
+        values = values[:, np.newaxis]
+    if values.size == 0:
+        return float("nan")
+    meta = sliced.metadata
+    mask = meta["ontology_curie"].astype(str).isin(ontology_terms).to_numpy() if "ontology_curie" in meta.columns else np.ones(values.shape[1], dtype=bool)
+    if not np.any(mask):
+        return float("nan")
+    return float(np.nanmean(values[:, mask]))
+
+
+def _fig3a_gene_tss_signals(rna_track: Any, *, interval: Any, gene_tss: dict[str, int], tss_half_width_bp: int) -> dict[tuple[str, str], float]:
+    out: dict[tuple[str, str], float] = {}
+    for gene, tss in gene_tss.items():
+        subq = _fig3a_mean_track_signal(rna_track, interval=interval, center_pos_1based=int(tss), half_width_bp=tss_half_width_bp, ontology_terms=_FIG3A_TISSUE_TERMS["adipose_subcutaneous"])
+        omentum = _fig3a_mean_track_signal(rna_track, interval=interval, center_pos_1based=int(tss), half_width_bp=tss_half_width_bp, ontology_terms=_FIG3A_TISSUE_TERMS["adipose_visceral_omentum"])
+        liver = _fig3a_mean_track_signal(rna_track, interval=interval, center_pos_1based=int(tss), half_width_bp=tss_half_width_bp, ontology_terms=_FIG3A_TISSUE_TERMS["liver"])
+        out[(gene, "liver")] = liver
+        out[(gene, "adipose_subcutaneous")] = subq
+        out[(gene, "adipose_visceral_omentum")] = omentum
+        out[(gene, "adipose_mean")] = float(np.nanmean(np.asarray([subq, omentum], dtype=float)))
+    return out
+
+
+def _mutate_window_complement(ref_seq: str, *, seq_start0: int, window_start1: int, window_bp: int) -> tuple[str, int]:
+    chars = list(ref_seq)
+    n_changed = 0
+    for pos1 in range(int(window_start1), int(window_start1) + int(window_bp)):
+        idx = int(pos1) - 1 - int(seq_start0)
+        if idx < 0 or idx >= len(chars):
+            continue
+        base = chars[idx].upper()
+        alt = _BASE_COMPLEMENT.get(base)
+        if alt is not None and alt != base:
+            chars[idx] = alt
+            n_changed += 1
+    return "".join(chars), n_changed
+
+
+def _append_rows_tsv(path: Path, rows: list[dict[str, object]]) -> None:
+    if not rows:
+        return
+    frame = pd.DataFrame(rows)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(path, sep="\t", index=False, mode="a", header=not path.exists())
+
+
+def _fig3a_stage1(run_dir: Path, audit: Audit, client: Any, dna_client: Any, interval: Any, ref_seq: str, gene_tss: dict[str, int]) -> pd.DataFrame:
+    out_tsv = run_dir / "predictions/Figure3A_regional_ism/stage1_window_deltas.tsv"
+    region_start, region_end = RS_POS - _FIG3A_HALF_WIDTH_BP, RS_POS + _FIG3A_HALF_WIDTH_BP
+    processed = set()
+    if out_tsv.exists():
+        existing = pd.read_csv(out_tsv, sep="\t")
+        if not existing.empty:
+            processed = set(existing.window_start.astype(int).tolist())
+    window_starts = list(range(region_start, region_end - _FIG3A_WINDOW_BP + 2, _FIG3A_STEP_BP))
+    pending = [s for s in window_starts if s not in processed]
+    if pending:
+        wt_output = client.predict_sequence(sequence=ref_seq, requested_outputs={dna_client.OutputType.RNA_SEQ}, ontology_terms=_FIG3A_ALL_TERMS, interval=interval)
+        wt_signals = _fig3a_gene_tss_signals(wt_output.rna_seq, interval=interval, gene_tss=gene_tss, tss_half_width_bp=_FIG3A_TSS_HALF_WIDTH_BP)
+        for i in range(0, len(pending), _FIG3A_STAGE1_BATCH_SIZE):
+            chunk = pending[i : i + _FIG3A_STAGE1_BATCH_SIZE]
+            with audit.step(f"3A stage 1: score windows {i + 1}-{i + len(chunk)} of {len(pending)}"):
+                sequences, meta = [], []
+                for ws in chunk:
+                    seq_mut, n_changed = _mutate_window_complement(ref_seq, seq_start0=int(interval.start), window_start1=ws, window_bp=_FIG3A_WINDOW_BP)
+                    sequences.append(seq_mut)
+                    meta.append((ws, ws + _FIG3A_WINDOW_BP - 1, n_changed))
+                outputs = client.predict_sequences(sequences=sequences, requested_outputs={dna_client.OutputType.RNA_SEQ}, ontology_terms=_FIG3A_ALL_TERMS, intervals=[interval] * len(chunk), progress_bar=False, max_workers=4)
+                rows = []
+                for out_obj, (ws, we, n_changed) in zip(outputs, meta, strict=True):
+                    mut_signals = _fig3a_gene_tss_signals(out_obj.rna_seq, interval=interval, gene_tss=gene_tss, tss_half_width_bp=_FIG3A_TSS_HALF_WIDTH_BP)
+                    wc = (ws + we) // 2
+                    for gene in GENES:
+                        for tissue in _FIG3A_PLOTTED_TISSUES:
+                            mut_val, wt_val = float(mut_signals.get((gene, tissue), np.nan)), float(wt_signals.get((gene, tissue), np.nan))
+                            rows.append({"chromosome": CHROM, "window_start": ws, "window_end": we, "window_center": wc, "window_bp": _FIG3A_WINDOW_BP,
+                                         "step_bp": _FIG3A_STEP_BP, "perturbation_rule": "complement", "n_mutated_bases": n_changed, "gene": gene,
+                                         "tissue": tissue, "mut_rna_tss": mut_val, "wt_rna_tss": wt_val, "delta_rna_tss": mut_val - wt_val})
+                _append_rows_tsv(out_tsv, rows)
+                audit.add_api_calls("3A", len(chunk))
+                audit.add_api_requests("3A", 1)
+    df = pd.read_csv(out_tsv, sep="\t")
+    return df.sort_values(["window_start", "gene", "tissue"]).reset_index(drop=True)
+
+
+def _select_top_windows_per_gene(stage1_df: pd.DataFrame, *, top_n: int) -> pd.DataFrame:
+    subset = stage1_df[stage1_df.tissue.isin(["liver", "adipose_mean"])].copy()
+    piv = subset.pivot_table(index=["gene", "window_start", "window_end", "window_center"], columns="tissue", values="delta_rna_tss", aggfunc="mean").reset_index().rename_axis(None, axis=1)
+    for col in ("liver", "adipose_mean"):
+        if col not in piv.columns:
+            piv[col] = np.nan
+    piv["contrast_liver_minus_adipose_mean"] = piv.liver.astype(float) - piv.adipose_mean.astype(float)
+    piv["rank_abs"] = piv.contrast_liver_minus_adipose_mean.abs()
+    selected = []
+    for gene in GENES:
+        g = piv[piv.gene.eq(gene)].sort_values("rank_abs", ascending=False)
+        chosen: list[tuple[int, int]] = []
+        rank = 0
+        for r in g.itertuples(index=False):
+            ws, we = int(r.window_start), int(r.window_end)
+            if any(not (we < s0 or ws > e0) for s0, e0 in chosen):
+                continue
+            chosen.append((ws, we))
+            rank += 1
+            selected.append({"gene": gene, "rank_nonoverlap": rank, "window_start": ws, "window_end": we, "window_center": int(r.window_center),
+                              "delta_liver": float(r.liver), "delta_adipose_mean": float(r.adipose_mean),
+                              "contrast_liver_minus_adipose_mean": float(r.contrast_liver_minus_adipose_mean), "abs_contrast": float(r.rank_abs)})
+            if rank >= top_n:
+                break
+    return pd.DataFrame(selected).sort_values(["gene", "rank_nonoverlap"]).reset_index(drop=True)
+
+
+def _fig3a_candidate_variants(genome_mod: Any, top_windows_df: pd.DataFrame, *, seq_start0: int, ref_seq: str) -> list:
+    positions: set[int] = set()
+    for r in top_windows_df.itertuples(index=False):
+        positions.update(range(int(r.window_start), int(r.window_end) + 1))
+    variants = []
+    for pos in sorted(positions):
+        idx = pos - 1 - seq_start0
+        if idx < 0 or idx >= len(ref_seq):
+            continue
+        ref = ref_seq[idx].upper()
+        if ref not in "ACGT":
+            continue
+        for alt in "ACGT":
+            if alt != ref:
+                variants.append(genome_mod.Variant(chromosome=CHROM, position=pos, reference_bases=ref, alternate_bases=alt, name=f"{CHROM}:{pos}:{ref}>{alt}"))
+    return variants
+
+
+def _fig3a_stage2(run_dir: Path, audit: Audit, client: Any, dna_client: Any, genome_mod: Any, interval: Any, ref_seq: str, gene_tss: dict[str, int], top_windows_df: pd.DataFrame) -> pd.DataFrame:
+    out_tsv = run_dir / "predictions/Figure3A_regional_ism/stage2_snv_ism_tss_deltas.tsv"
+    variants = _fig3a_candidate_variants(genome_mod, top_windows_df, seq_start0=int(interval.start), ref_seq=ref_seq)
+    done_keys: set[str] = set()
+    if out_tsv.exists():
+        old = pd.read_csv(out_tsv, sep="\t")
+        if not old.empty:
+            done_keys = set(old.variant_key.astype(str).unique().tolist())
+    pending = [v for v in variants if f"{v.chromosome}:{int(v.position)}:{v.reference_bases}>{v.alternate_bases}" not in done_keys]
+    for i in range(0, len(pending), _FIG3A_STAGE2_BATCH_SIZE):
+        chunk = pending[i : i + _FIG3A_STAGE2_BATCH_SIZE]
+        with audit.step(f"3A stage 2: score SNVs {i + 1}-{i + len(chunk)} of {len(pending)}"):
+            outputs = client.predict_variants(intervals=interval, variants=chunk, requested_outputs={dna_client.OutputType.RNA_SEQ}, ontology_terms=_FIG3A_ALL_TERMS, progress_bar=False, max_workers=4)
+            rows = []
+            for var, out_obj in zip(chunk, outputs, strict=True):
+                ref_signals = _fig3a_gene_tss_signals(out_obj.reference.rna_seq, interval=interval, gene_tss=gene_tss, tss_half_width_bp=_FIG3A_TSS_HALF_WIDTH_BP)
+                alt_signals = _fig3a_gene_tss_signals(out_obj.alternate.rna_seq, interval=interval, gene_tss=gene_tss, tss_half_width_bp=_FIG3A_TSS_HALF_WIDTH_BP)
+                var_key = f"{var.chromosome}:{int(var.position)}:{var.reference_bases}>{var.alternate_bases}"
+                for gene in GENES:
+                    for tissue in _FIG3A_PLOTTED_TISSUES:
+                        ref_val, alt_val = float(ref_signals.get((gene, tissue), np.nan)), float(alt_signals.get((gene, tissue), np.nan))
+                        rows.append({"variant_key": var_key, "chromosome": str(var.chromosome), "position": int(var.position), "ref_base": str(var.reference_bases),
+                                     "alt_base": str(var.alternate_bases), "gene": gene, "tissue": tissue, "ref_rna_tss": ref_val, "alt_rna_tss": alt_val, "delta_rna_tss": alt_val - ref_val})
+            _append_rows_tsv(out_tsv, rows)
+            audit.add_api_calls("3A", len(chunk))
+            audit.add_api_requests("3A", 1)
+    df = pd.read_csv(out_tsv, sep="\t")
+    return df.sort_values(["position", "ref_base", "alt_base", "gene", "tissue"]).reset_index(drop=True)
+
+
+def _render3a(stage1_df: pd.DataFrame, output: Path) -> None:
+    plot_df = stage1_df.drop_duplicates(subset=["gene", "tissue", "window_start"])
+    colors = {"liver": "#d62728", "adipose_subcutaneous": "#1f77b4", "adipose_visceral_omentum": "#17becf", "adipose_mean": "#4e79a7"}
+    fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True, constrained_layout=True)
+    for ax, gene in zip(axes, GENES, strict=True):
+        g = plot_df[plot_df.gene.eq(gene)]
+        piv = g.pivot_table(index="window_center", columns="tissue", values="delta_rna_tss", aggfunc="mean").sort_index()
+        for tissue in _FIG3A_PLOTTED_TISSUES:
+            if tissue in piv.columns:
+                ax.plot(piv.index, piv[tissue], color=colors[tissue], linewidth=1.0, alpha=0.8, label=tissue)
+        ax.axvline(float(RS_POS), color="#aa0000", linestyle="--", linewidth=1.0)
+        ax.set_ylabel(f"{gene}\nΔ RNA(TSS)", fontsize=9)
+        ax.grid(alpha=0.2, linewidth=0.4)
+    axes[0].legend(frameon=False, fontsize=7, loc="upper right", ncol=2)
+    axes[-1].set_xlabel("Genomic position (hg38)")
+    _save_svg(fig, output)
+
+
+def run_fig3a(run_dir: Path, audit: Audit, fasta_path: Path) -> None:
+    genome_mod, dna_client, dna_model, _ = _ag()
+    interval = genome_mod.Interval(CHROM, RS_POS, RS_POS).resize(SEQ_LEN)
+    ref_seq = _fetch_reference(fasta_path, interval)
+    client = dna_client.create(api_key(), model_version=dna_model.ModelVersion.ALL_FOLDS, timeout=300)
+    gene_tss = _gene_tss_table()
+    stage1_df = _fig3a_stage1(run_dir, audit, client, dna_client, interval, ref_seq, gene_tss)
+    top_windows_df = _select_top_windows_per_gene(stage1_df, top_n=_FIG3A_TOP_WINDOWS_PER_GENE)
+    stage2_df = _fig3a_stage2(run_dir, audit, client, dna_client, genome_mod, interval, ref_seq, gene_tss, top_windows_df)
+    with audit.step("3A: write derived tables and render"):
+        out = run_dir / "derived/Figure3A_regional_ism"; out.mkdir(parents=True, exist_ok=True)
+        top_windows_df.to_csv(out / "stage2_top_windows_per_gene.tsv", sep="\t", index=False)
+        stage2_df.to_csv(out / "stage2_snv_ism_tss_deltas.tsv", sep="\t", index=False)
+        run_metadata = {
+            "region_chrom": CHROM, "region_start": RS_POS - _FIG3A_HALF_WIDTH_BP, "region_end": RS_POS + _FIG3A_HALF_WIDTH_BP,
+            "center_snp": "rs12740374", "center_pos": RS_POS, "genes": list(GENES), "gene_tss": {g: int(t) for g, t in gene_tss.items()},
+            "stage1": {"window_bp": _FIG3A_WINDOW_BP, "step_bp": _FIG3A_STEP_BP, "tss_half_width_bp": _FIG3A_TSS_HALF_WIDTH_BP, "rows": int(len(stage1_df))},
+            "stage2": {"top_windows_per_gene": _FIG3A_TOP_WINDOWS_PER_GENE, "rows": int(len(stage2_df))},
+            "seq_window": SEQ_LEN,
+        }
+        (out / "run_metadata.json").write_text(json.dumps(run_metadata, indent=2))
+        _render3a(stage1_df, run_dir / "figures/Figure3A.svg")

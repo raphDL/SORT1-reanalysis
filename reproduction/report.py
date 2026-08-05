@@ -341,11 +341,41 @@ def compare_fig3e(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == 112 and mean_values["pass"] and sem_values["pass"], "rows": len(joined), "mean_retention": mean_values, "sem_retention": sem_values}
 
 
+def compare_fig3a(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure3A_regional_ism/stage2_top_windows_per_gene.tsv"
+    reference = REFERENCE_ROOT / "Figure3A_regional_ism/stage2_top_windows_per_gene.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(reference, sep="\t")
+    keys = ["gene", "window_start", "window_end"]
+    got_i, want_i = got.set_index(keys), want.set_index(keys)
+    common = got_i.index.intersection(want_i.index)
+    # The stage-1 window scan is a greedy, non-overlapping top-N-per-gene
+    # selection over live-scored deltas; a near-tied window pick can shift by
+    # one step (5 bp) under ordinary AlphaGenome run-to-run drift, same as
+    # the already-documented Figure 3C hotspot-selection sensitivity (R019).
+    # So this compares the intersection of selected windows on correlation
+    # and requires the overlap itself stay high, rather than exact window
+    # identity.
+    overlap_fraction = len(common) / len(want)
+    columns = ["delta_liver", "delta_adipose_mean", "contrast_liver_minus_adipose_mean"]
+    values = {
+        column: _numeric_summary(got_i.loc[common, column], want_i.loc[common, column], rtol=0.0, atol=5e-4, min_pearson=0.995)
+        for column in columns
+    } if len(common) else {column: {"pass": False, "reason": "no_common_windows"} for column in columns}
+    return {
+        "pass": bool(len(got) == 150 and len(want) == 150 and overlap_fraction >= 0.9 and all(v["pass"] for v in values.values())),
+        "generated_rows": len(got), "reference_rows": len(want), "common_window_overlap_fraction": overlap_fraction,
+        "values": values,
+    }
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
-    "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e, "3G": compare_fig3g,
+    "3A": compare_fig3a, "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e, "3G": compare_fig3g,
 }
 
 
@@ -460,6 +490,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "2C": ("hg38 + AlphaGenome API", "ALL_FOLDS"),
         "2E": ("Kircher 2019 MPRA + AlphaGenome API", "ALL_FOLDS"),
         "2F": ("Kircher 2019 MPRA + AlphaGenome API", "ALL_FOLDS"),
+        "3A": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
         "3B": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
         "3C": ("Figure 3B outputs + JASPAR 2024 CORE + GRCh38", "none (local PWM scan)"),
         "3G": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
