@@ -371,11 +371,36 @@ def compare_fig3a(run_dir: Path) -> dict[str, object]:
     }
 
 
+def compare_fig3f(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure3F_boundary_grid/surface_summary_paired.csv"
+    reference = REFERENCE_ROOT / "Figure3F_boundary_grid/surface_summary_paired.csv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated)
+    want = pd.read_csv(reference)
+    keys = ["gene", "upstream_bp", "downstream_bp"]
+    columns = ["outside_mean_retention", "outside_median_retention", "inside_mean_retention", "inside_median_retention"]
+    joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {column: _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=0.0, atol=5e-3, min_pearson=0.99) for column in columns}
+    selected_generated = pd.read_csv(run_dir / "derived/Figure3F_boundary_grid/selected_mean_window.csv")
+    selected_reference = pd.read_csv(REFERENCE_ROOT / "Figure3F_boundary_grid/selected_mean_window.csv")
+    selected_match = (
+        not selected_generated.empty and not selected_reference.empty
+        and int(selected_generated.iloc[0].upstream_bp) == int(selected_reference.iloc[0].upstream_bp)
+        and int(selected_generated.iloc[0].downstream_bp) == int(selected_reference.iloc[0].downstream_bp)
+    )
+    return {
+        "pass": len(joined) == 2688 and selected_match and all(item["pass"] for item in results.values()),
+        "rows": len(joined), "selected_window_matches": selected_match, "values": results,
+    }
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
-    "3A": compare_fig3a, "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e, "3G": compare_fig3g,
+    "3A": compare_fig3a, "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e,
+    "3F": compare_fig3f, "3G": compare_fig3g,
 }
 
 
@@ -495,6 +520,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "3C": ("Figure 3B outputs + JASPAR 2024 CORE + GRCh38", "none (local PWM scan)"),
         "3G": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
         "3E": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
+        "3F": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)

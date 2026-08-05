@@ -1032,3 +1032,161 @@ def run_fig3a(run_dir: Path, audit: Audit, fasta_path: Path) -> None:
         }
         (out / "run_metadata.json").write_text(json.dumps(run_metadata, indent=2))
         _render3a(stage1_df, run_dir / "figures/Figure3A.svg")
+
+
+# --- Figure 3F: wide-main-panel 1bp boundary grid --------------------------
+#
+# The complete 1-bp rectangle U=175-190 (upstream extent retained) by
+# D=105-160 (downstream extent retained), 8 seeds, both "outside_scramble"
+# (native window / scrambled flanks) and "inside_scramble" (scrambled window
+# / native flanks) conditions. Ported from the working archive's
+# report/panel_asymmetric_scramble/run_fine_2d_minimal_core.py
+# (--candidate-mode wide-main-panel) and its shared armwise-scramble/
+# nested-background machinery in run_asymmetric_native_scramble.py -- not
+# part of this repository.
+
+_FIG3F_UPSTREAM_RANGE = range(175, 191)
+_FIG3F_DOWNSTREAM_RANGE = range(105, 161)
+_FIG3F_SEEDS = list(range(1740374, 1740382))
+_FIG3F_LOCAL_HALF_BP = 1000
+
+
+def _shared_armwise_scramble_template(ref_seq: str, *, seq_start0: int, local_half_bp: int, scramble_seed: int) -> str:
+    chars = list(ref_seq)
+    seed_base = int(scramble_seed) + 7_919
+    local_start, local_end = RS_POS - local_half_bp, RS_POS + local_half_bp
+    _scramble_range(chars, seq_start0=seq_start0, start1=local_start, end1=RS_POS - 1, seed=seed_base + 11)
+    _scramble_range(chars, seq_start0=seq_start0, start1=RS_POS + 1, end1=local_end, seed=seed_base + 29)
+    return "".join(chars)
+
+
+def _fig3f_nested_background(ref_seq: str, scrambled_template: str, *, seq_start0: int, upstream: int, downstream: int, condition: str) -> str:
+    window_start, window_end = RS_POS - upstream, RS_POS + downstream
+    start_index, end_index = window_start - 1 - seq_start0, window_end - 1 - seq_start0
+    rs_index = RS_POS - 1 - seq_start0
+    if condition == "outside_scramble":
+        chars = list(scrambled_template)
+        for index in range(start_index, end_index + 1):
+            if index != rs_index:
+                chars[index] = ref_seq[index]
+    elif condition == "inside_scramble":
+        chars = list(ref_seq)
+        for index in range(start_index, end_index + 1):
+            if index != rs_index:
+                chars[index] = scrambled_template[index]
+    else:
+        raise ValueError(f"Unknown condition: {condition}")
+    return "".join(chars)
+
+
+def _fig3f_candidate_pairs() -> list[tuple[int, int]]:
+    return sorted((u, d) for u in _FIG3F_UPSTREAM_RANGE for d in _FIG3F_DOWNSTREAM_RANGE)
+
+
+def _fig3f_build_design(ref_seq: str, seq_start0: int, templates: dict[int, str]) -> tuple[list[str], pd.DataFrame]:
+    pairs = _fig3f_candidate_pairs()
+    sequences: list[str] = []
+    rows: list[dict[str, object]] = []
+    for seed in _FIG3F_SEEDS:
+        for allele, base_value in (("REF", "G"), ("ALT", "T")):
+            sequence = _set_base(ref_seq, seq_start0, RS_POS, base_value)
+            sequences.append(sequence)
+            rows.append({
+                "sequence_index": len(sequences) - 1, "scramble_seed": seed, "design_family": "native", "condition": "wt",
+                "upstream_bp": np.nan, "downstream_bp": np.nan, "window_length_bp": np.nan, "allele": allele,
+                "sequence_sha256": hashlib.sha256(sequence.encode()).hexdigest(),
+            })
+        for upstream, downstream in pairs:
+            for condition in ("outside_scramble", "inside_scramble"):
+                background = _fig3f_nested_background(ref_seq, templates[seed], seq_start0=seq_start0, upstream=upstream, downstream=downstream, condition=condition)
+                for allele, base_value in (("REF", "G"), ("ALT", "T")):
+                    sequence = _set_base(background, seq_start0, RS_POS, base_value)
+                    sequences.append(sequence)
+                    rows.append({
+                        "sequence_index": len(sequences) - 1, "scramble_seed": seed, "design_family": "fine_2d_minimal_core", "condition": condition,
+                        "upstream_bp": float(upstream), "downstream_bp": float(downstream), "window_length_bp": float(upstream + downstream + 1), "allele": allele,
+                        "sequence_sha256": hashlib.sha256(sequence.encode()).hexdigest(),
+                    })
+    return sequences, pd.DataFrame(rows)
+
+
+def _fig3f_retention(scored: pd.DataFrame) -> pd.DataFrame:
+    keys = ["scramble_seed", "design_family", "condition", "upstream_bp", "downstream_bp", "window_length_bp", "gene"]
+    ref = scored[scored.allele.eq("REF")].copy()
+    alt = scored[scored.allele.eq("ALT")].copy()
+    paired = ref.merge(alt, on=keys, suffixes=("_ref", "_alt"), validate="one_to_one")
+    paired["delta_liver"] = paired.liver_rna_signal_alt - paired.liver_rna_signal_ref
+    native = paired[paired.condition.eq("wt")][["scramble_seed", "gene", "delta_liver"]].rename(columns={"delta_liver": "native_delta_liver"})
+    paired = paired.merge(native, on=["scramble_seed", "gene"], validate="many_to_one")
+    denominator = paired.native_delta_liver.abs().where(paired.native_delta_liver.abs() > 1e-12, np.nan)
+    paired["retention_vs_native"] = paired.delta_liver.abs() / denominator
+    return paired
+
+
+def _fig3f_summarize(retention: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    candidates = retention[retention.design_family.eq("fine_2d_minimal_core")]
+    summary = candidates.groupby(["gene", "condition", "upstream_bp", "downstream_bp", "window_length_bp"], as_index=False).agg(
+        n_seeds=("scramble_seed", "nunique"), mean_retention=("retention_vs_native", "mean"), median_retention=("retention_vs_native", "median"),
+        sd_retention=("retention_vs_native", "std"), min_retention=("retention_vs_native", "min"), max_retention=("retention_vs_native", "max"),
+        fraction_seeds_ge_0p7=("retention_vs_native", lambda v: float(np.mean(np.asarray(v, dtype=float) >= 0.70))),
+    )
+    outside = summary[summary.condition.eq("outside_scramble")].drop(columns="condition").rename(
+        columns={c: f"outside_{c}" for c in summary.columns if c not in {"condition", "gene", "upstream_bp", "downstream_bp", "window_length_bp"}}
+    )
+    inside = summary[summary.condition.eq("inside_scramble")].drop(columns="condition").rename(
+        columns={c: f"inside_{c}" for c in summary.columns if c not in {"condition", "gene", "upstream_bp", "downstream_bp", "window_length_bp"}}
+    )
+    paired = outside.merge(inside, on=["gene", "upstream_bp", "downstream_bp", "window_length_bp"], validate="one_to_one")
+    paired["contains_full_minor_motif"] = paired.upstream_bp.ge(1) & paired.downstream_bp.ge(8)
+    paired["passes_mean_criterion"] = paired.outside_mean_retention.ge(0.70) & paired.inside_mean_retention.le(0.30) & paired.contains_full_minor_motif
+    paired["passes_median_criterion"] = paired.outside_median_retention.ge(0.70) & paired.inside_mean_retention.le(0.30) & paired.contains_full_minor_motif
+    return summary, paired
+
+
+def _fig3f_select_primary(paired: pd.DataFrame, criterion: str) -> pd.DataFrame:
+    candidates = paired[paired.gene.eq("SORT1") & paired[criterion]]
+    if candidates.empty:
+        return candidates
+    return candidates.sort_values(["window_length_bp", "outside_mean_retention", "downstream_bp"], ascending=[True, False, True]).head(1)
+
+
+def _render3f(paired: pd.DataFrame, selected_mean: pd.DataFrame, output: Path) -> None:
+    upstream = np.array(sorted(_FIG3F_UPSTREAM_RANGE))
+    downstream = np.array(sorted(_FIG3F_DOWNSTREAM_RANGE))
+    sort1 = paired[paired.gene.eq("SORT1")]
+    matrix = sort1.pivot(index="upstream_bp", columns="downstream_bp", values="outside_mean_retention").reindex(index=upstream, columns=downstream).to_numpy()
+    fig, ax = plt.subplots(figsize=(6.35, 2.05))
+    fig.subplots_adjust(left=0.105, right=0.85, bottom=0.23, top=0.82)
+    mesh = ax.pcolormesh(np.arange(104.5, 161.5), np.arange(174.5, 191.5), matrix, cmap="viridis", vmin=0.40, vmax=0.80, shading="flat")
+    ax.contour(downstream, upstream, matrix, levels=[0.70], colors="white", linewidths=1.0)
+    if not selected_mean.empty:
+        row = selected_mean.iloc[0]
+        ax.scatter([row.downstream_bp], [row.upstream_bp], marker="s", s=48, facecolors="none", edgecolors="#ef3b2c", linewidths=1.4, zorder=5)
+    ax.set_xlim(104.5, 160.5); ax.set_ylim(174.5, 190.5); ax.set_aspect("equal", adjustable="box")
+    ax.set_xlabel("Downstream extent retained (bp)"); ax.set_ylabel("Upstream extent retained (bp)")
+    cbar = fig.colorbar(mesh, ax=ax, fraction=0.035, pad=0.025)
+    cbar.set_label("Mean SORT1 retention\nvs intact locus", labelpad=4)
+    _save_svg(fig, output)
+
+
+def run_fig3f(run_dir: Path, audit: Audit, fasta_path: Path, *, batch_size: int = 256, max_workers: int = 8) -> None:
+    genome_mod, _, _, _ = _ag()
+    interval = genome_mod.Interval(CHROM, RS_POS, RS_POS).resize(SEQ_LEN)
+    ref_seq = _fetch_reference(fasta_path, interval)
+    with audit.step("3F: build wide-main-panel 1bp boundary grid design"):
+        templates = {seed: _shared_armwise_scramble_template(ref_seq, seq_start0=int(interval.start), local_half_bp=_FIG3F_LOCAL_HALF_BP, scramble_seed=seed) for seed in _FIG3F_SEEDS}
+        sequences, design = _fig3f_build_design(ref_seq, int(interval.start), templates)
+        out = run_dir / "derived/Figure3F_boundary_grid"; out.mkdir(parents=True, exist_ok=True)
+        design.to_csv(out / "sequence_design.csv", index=False)
+    scored = _score_design(run_dir, audit, "3F", interval, sequences, design, batch_size=batch_size, max_workers=max_workers)
+    with audit.step("3F: compute retention surfaces and render"):
+        retention = _fig3f_retention(scored)
+        retention.to_csv(out / "retention_by_seed.csv", index=False)
+        summary, paired = _fig3f_summarize(retention)
+        summary.to_csv(out / "surface_summary_long.csv", index=False)
+        paired.to_csv(out / "surface_summary_paired.csv", index=False)
+        selected_mean = _fig3f_select_primary(paired, "passes_mean_criterion")
+        selected_median = _fig3f_select_primary(paired, "passes_median_criterion")
+        selected_mean.to_csv(out / "selected_mean_window.csv", index=False)
+        selected_median.to_csv(out / "selected_median_window.csv", index=False)
+        _render3f(paired, selected_mean, run_dir / "figures/Figure3F.svg")
