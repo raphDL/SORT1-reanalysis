@@ -206,3 +206,66 @@ support:
 > on the first attempt, with numerical/visual equivalence to the published
 > reference reported under explicit tolerances. Deposit-pending large
 > derived tables and the final DOI remain the only external dependency.
+
+## Update 2026-08-05 (later same day): R015 closed, Figure 3C wired into `reproduce.py`
+
+**R015 (Figure 2C `MergeError`) is closed.** Root cause: the grid cell
+(upstream=0, downstream=0) deletes zero bases and hashes identically to the
+standalone "minor" design, so two design rows legitimately share every
+`keys` value. The old baseline computation
+(`.drop_duplicates(keys)` feeding a `validate="many_to_one"` merge) silently
+assumed every row sharing a `keys` combination is byte-identical; a NaN in
+an optional metadata column, or a partially-written sequence-cache file from
+an interrupted prior attempt, breaks that assumption (pandas groups NaN keys
+together), which is what previously surfaced as the intermittent
+`MergeError`. Fixed by extracting `_minor_baseline()` in
+`reproduction/figure2.py`, which aggregates explicitly (unique by
+construction) and raises a clear, diagnosable `ValueError` if the underlying
+values genuinely disagree. Three regression tests added
+(`tests/test_reproduction.py`); a live `run_fig2c()` call reusing the
+existing sequence cache from `figure2_public_inputs_20260802T192638Z`
+completed with **zero new API calls** and matched the release table within
+its existing tolerance (max abs diff 0.009 vs `atol=0.0125`).
+
+**Figure 3C is now a tracked `reproduce.py` panel** (`--panels 3B,3C` or any
+superset; 3B auto-runs first as a labeled prerequisite if its derived output
+is missing, same pattern as 1F→1E). `run_fig3b` was extended to also persist
+`native_locus_501bp_all_gene_scores.tsv` (the per-gene, non-averaged ISM
+table 3C needs; purely additive, doesn't touch 3B's existing comparison).
+`run_fig3c` ports the PWM-scan logic from the working archive's
+`make_panel_C.py` / `sort1_pwm_motif_analysis.py` (JASPAR download added at
+`JASPAR_URL`, checksum-verified against `data/SOURCES.tsv`'s recorded hash).
+
+Verification, cheapest first:
+- The ported PWM-scan/collapse logic alone: fed the *original* publication's
+  3B hotspot windows, it reproduces the release's
+  `Figure3C_pwm_compatibility.tsv` byte-identically -- confirms the port
+  itself is correct.
+- End to end through the real CLI (`reproduce.py run --panels 3B,3C` then
+  `compare`, evidence at
+  `/Volumes/T7/alphaGenome/repro_crash_test/runs/fig3c_cli_e2e_20260805/`):
+  **PASS**, Pearson r=0.99, 7/8 displayed PWM families match.
+- **New finding, not a bug**: run end to end from `reproduce.py`'s own
+  freshly-scored 3B output (rather than the original publication's 3B
+  output), hotspot H1's greedy non-overlapping window pick shifts by 1 bp
+  (`-179..-168` vs the original `-178..-167`) -- a near-tied selection
+  flipped by the same ~1e-4 AlphaGenome run-to-run drift already tolerated
+  in `compare_fig3b`. Figure 3C's PWM scan then amplifies that 1 bp shift
+  into a visibly different score for the affected cell (H1/C-EBP-bZIP:
+  0.034 published vs 0.017 regenerated) and swaps one displayed family
+  (`NFI` in the original vs `HNF4/nuclear receptor` regenerated). This is
+  the same class of near-tie window-selection instability already
+  identified once before in this project (see memory: "TSS+25 Regulatory
+  Anchor — FALSIFIED"). `compare_fig3c()` in `reproduction/report.py`
+  documents this explicitly and compares on correlation
+  (`min_pearson=0.85`) and displayed-family overlap (`>=75%`) rather than
+  exact values, precisely because exact match is not the right bar for a
+  panel one greedy-selection step downstream of live-scored ISM.
+
+Remaining for full Figure 3 harness coverage: 3A, 3E, 3F, 3G still need
+`reproduction/figure3.py` entry points (verified reproducible by direct
+script invocation per the previous update, but not yet tracked/checksummed
+through `reproduce.py`). 3F in particular (28,688 sequence designs) would
+need a real, substantial new AlphaGenome scoring pass to verify fresh
+through the harness rather than reusing already-scored data -- a cost
+decision, not just an engineering one.

@@ -41,13 +41,13 @@ from reproduction.figure2 import (
     run_fig2e,
     run_fig2f,
 )
-from reproduction.figure3 import run_fig3b
+from reproduction.figure3 import run_fig3b, run_fig3c
 from reproduction.report import compare_run, write_report
 
 
 FIGURE1_PANELS = ["1B", "1C", "1D", "1E", "1F"]
 FIGURE2_PANELS = ["2B", "2C", "2E", "2F"]
-FIGURE3_PANELS = ["3B"]
+FIGURE3_PANELS = ["3B", "3C"]
 SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -180,6 +180,12 @@ def run(args: argparse.Namespace) -> int:
         if "3B" in args.panels:
             with audit.step("3B: native-locus 501-bp three-gene ISM"):
                 run_fig3b(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "3C" in args.panels:
+            if not (args.run_dir / "derived/Figure3B_native_501bp_ism/native_locus_501bp_all_gene_scores.tsv").exists():
+                with audit.step("3C prerequisite: Figure 3B native-locus 501-bp three-gene ISM"):
+                    run_fig3b(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+            with audit.step("3C: scan JASPAR motifs and score PWM compatibility vs Figure 3B ISM"):
+                run_fig3c(args.run_dir, audit, figure3_fasta)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)

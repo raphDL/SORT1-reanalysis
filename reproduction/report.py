@@ -270,11 +270,45 @@ def compare_fig3b(run_dir: Path) -> dict[str, object]:
     return {"pass":exact and values["pass"] and all(x["pass"] for x in summary.values()),"substitution_sequences_exact":exact,"matched_states":len(joined),"loss":values,"position_summary":summary}
 
 
+def compare_fig3c(run_dir: Path) -> dict[str, object]:
+    generated = run_dir / "derived/Figure3C_pwm_compatibility/Figure3C_PWM_disruption_values.tsv"
+    reference = REFERENCE_ROOT / "Figure3C_pwm_compatibility.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got = pd.read_csv(generated, sep="\t", index_col=0)
+    want = pd.read_csv(reference, sep="\t", index_col=0)
+    # Figure 3C's PWM scan is exact given fixed hotspot windows (verified
+    # byte-identical against the release when fed the same 3B hotspots as
+    # the original publication run). But when run end to end, it inherits
+    # run_fig3b's ~1e-4 AlphaGenome run-to-run drift; a near-tied greedy
+    # hotspot window pick can shift by 1 bp, which this pure local PWM scan
+    # then amplifies into a visibly different score for that one cell. So
+    # this compares correlation and displayed-family overlap, not exact
+    # values -- see REPRODUCIBILITY_NEXT_STEPS.md R019.
+    rows_exact = list(got.index) == list(want.index)
+    shared_families = sorted(set(got.columns) & set(want.columns))
+    family_overlap = len(shared_families) / len(want.columns)
+    values = _numeric_summary(
+        got.loc[got.index, shared_families].to_numpy() if rows_exact else np.array([]),
+        want.loc[want.index, shared_families].to_numpy() if rows_exact else np.array([]),
+        rtol=0.0, atol=1.0, min_pearson=0.85,
+    ) if rows_exact and shared_families else {"pass": False, "reason": "rows_or_families_missing"}
+    return {
+        "pass": bool(rows_exact and family_overlap >= 0.75 and values["pass"]),
+        "hotspot_rows_exact": rows_exact,
+        "displayed_family_overlap_fraction": family_overlap,
+        "shared_families": shared_families,
+        "generated_only_families": sorted(set(got.columns) - set(want.columns)),
+        "reference_only_families": sorted(set(want.columns) - set(got.columns)),
+        "values": values,
+    }
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
     "2B": compare_fig2b, "2C": compare_fig2c, "2E": compare_fig2e, "2F": compare_fig2f,
-    "3B": compare_fig3b,
+    "3B": compare_fig3b, "3C": compare_fig3c,
 }
 
 
@@ -390,6 +424,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "2E": ("Kircher 2019 MPRA + AlphaGenome API", "ALL_FOLDS"),
         "2F": ("Kircher 2019 MPRA + AlphaGenome API", "ALL_FOLDS"),
         "3B": ("GRCh38 + AlphaGenome API", "ALL_FOLDS"),
+        "3C": ("Figure 3B outputs + JASPAR 2024 CORE + GRCh38", "none (local PWM scan)"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)
