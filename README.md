@@ -1,8 +1,10 @@
 # SORT1 1p13.3 sequence-to-function reanalysis
+<img width="508" height="622" alt="graphabstract" src="https://github.com/user-attachments/assets/a2fac8da-50c9-4889-a578-ae368ffa7232" />
 
 Analysis code, compact source data, and figure-generation code for a
 computational reanalysis of the `SORT1` 1p13.3 cholesterol locus with
 AlphaGenome.
+
 
 ## Reproducing from scratch
 
