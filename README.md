@@ -26,6 +26,28 @@ Figures 4H and 4J are large exhaustive AlphaGenome screens (~900K and
 completed, and 4J is scoped but not yet ported. Figures 1A/2A/2D/3D/4A/4D/4I
 are author-layout schematics, out of scope for the runner.
 
+## Regenerating figures from existing predictions (fast)
+
+The commands above re-run every AlphaGenome prediction from scratch —
+useful for verifying reproducibility, but slow and API-cost-bearing. If
+you just want the plots, skip straight to rendering from the compact
+tables already checked into `outputs/source_data/` — no API key, no
+downloads, seconds instead of hours:
+
+```bash
+python figures/fig1.py   # Figure 1C, 1D, 1E, 1F
+python figures/fig2.py   # Figure 2B, 2C, 2E, 2F
+python figures/fig3.py   # Figure 3E, 3F, 3G
+python figures/figS5.py  # Figure S5B, S5C
+```
+
+Not every panel has a rendering entry point yet (see `figures/README.md`
+for current coverage); those panels' compact tables are still in
+`outputs/source_data/` even without a plotting script. For a few panels
+(3A, 3F, 4E/4F, 4J, S8D) the full per-position/per-variant prediction
+data behind the compact table is too large to commit and lives on Zenodo
+instead: [10.5281/zenodo.21820090](https://doi.org/10.5281/zenodo.21820090).
+
 ## Layout
 
 - `data/` — provenance (`SOURCES.tsv`) and small curated inputs.
