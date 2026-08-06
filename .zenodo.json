@@ -1,0 +1,21 @@
+{
+  "title": "Sequence-to-function reanalysis of the SORT1 1p13.3 cholesterol locus: analysis code",
+  "description": "Analysis code, compact source data, and figure-generation code for a computational reanalysis of the SORT1 1p13.3 cholesterol locus with AlphaGenome. Includes a clean-room reproducibility runner (reproduce.py) that downloads public inputs and calls the AlphaGenome API fresh for every prediction.",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {"name": "Mompó Gisbert, Lucía"},
+    {"name": "Kalla, Victoria"},
+    {"name": "Riedmayr, Lisa M."},
+    {"name": "Ferreira, Raphael"}
+  ],
+  "keywords": [
+    "AlphaGenome",
+    "SORT1",
+    "rs12740374",
+    "regulatory genomics",
+    "sequence-to-function",
+    "reproducibility"
+  ],
+  "access_right": "open"
+}

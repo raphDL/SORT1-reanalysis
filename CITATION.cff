@@ -12,5 +12,6 @@ authors:
     given-names: "Lisa M."
   - family-names: "Ferreira"
     given-names: "Raphael"
-repository-code: "https://github.com/raphDL/SORT1-reanalysis""
+repository-code: "https://github.com/raphDL/SORT1-reanalysis"
+license: MIT
 abstract: "Analysis and figure-generation code for an AlphaGenome reanalysis of the SORT1 1p13.3 cholesterol locus."
