@@ -556,6 +556,82 @@ def compare_fig4h(run_dir: Path, *, reference_file: Path | None = None) -> dict[
     return {"pass": all(bool(item["pass"]) for item in results.values()), "values": results}
 
 
+def compare_figs1a(run_dir: Path) -> dict[str, object]:
+    """S1A is re-derived from the same static public 4DN Hi-C file Figure 1D
+    already fetches -- no model involved, so exact reproduction (not just
+    correlation) is the meaningful bar. Verified byte-identical (0 diff) in
+    a zero-cost smoke test before this comparator's tolerance was chosen."""
+    generated = run_dir / "derived/FigureS1A_observed_virtual4c.tsv"
+    reference = REFERENCE_ROOT / "FigureS1A_observed_virtual4c.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    joined = got.merge(want, on="position_from_rs12740374_kb", suffixes=("_generated", "_reference"), validate="one_to_one")
+    result = _numeric_summary(joined["observed_contact_oe_3x3_smoothed_generated"], joined["observed_contact_oe_3x3_smoothed_reference"], rtol=0.0, atol=1e-6)
+    return {"pass": len(joined) == len(want) and result["pass"], "rows": len(joined), "values": {"observed_contact_oe_3x3_smoothed": result}}
+
+
+def compare_figs1b(run_dir: Path) -> dict[str, object]:
+    """Observed rows are the same static Hi-C data as S1A (exact); FOLD_0
+    rows are one fixed AlphaGenome prediction each (not summed over many
+    tiny per-variant deltas), so a tight-but-real tolerance is meaningful
+    here too, unlike bootstrap- or single-SNV-delta-based panels."""
+    generated = run_dir / "derived/FigureS1B_tss_bin_contact.tsv"
+    reference = REFERENCE_ROOT / "FigureS1B_tss_bin_contact.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    joined = got.merge(want, on=["source", "gene"], suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {
+        "contact_value": _numeric_summary(joined["contact_value_generated"], joined["contact_value_reference"], rtol=0.0, atol=0.05),
+        "same_distance_percentile": _numeric_summary(joined["same_distance_percentile_generated"], joined["same_distance_percentile_reference"], rtol=0.0, atol=5.0),
+    }
+    return {"pass": len(joined) == 6 and all(bool(item["pass"]) for item in results.values()), "rows": len(joined), "values": results}
+
+
+def compare_figs1c(run_dir: Path) -> dict[str, object]:
+    """panelB/panelC_contact_map_scores are single fixed predictions (tight
+    tolerance, matches a real smoke-test max diff of ~1.4e-5 before this
+    tolerance was set); panelC_local_snv_null is 100 individual-variant
+    contact deltas -- the same tiny-signal-vs-model-drift regime already
+    documented for Figure 4H -- so only the aggregate empirical-percentile
+    conclusion, not every individual null value, is required to match."""
+    out = run_dir / "derived/FigureS1C_contact_allele_delta"
+    if not (out / "panelB_promoter_allele_delta.tsv").exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    results: dict[str, object] = {}
+    got_b = pd.read_csv(out / "panelB_promoter_allele_delta.tsv", sep="\t")
+    want_b = pd.read_csv(REFERENCE_ROOT / "FigureS1C_contact_allele_delta/panelB_promoter_allele_delta.tsv", sep="\t")
+    joined_b = got_b.merge(want_b, on="gene", suffixes=("_generated", "_reference"))
+    results["panelB_delta"] = _numeric_summary(joined_b["delta_log_observed_expected_pm1bin_generated"], joined_b["delta_log_observed_expected_pm1bin_reference"], rtol=0.0, atol=0.05)
+
+    got_c = pd.read_csv(out / "panelC_contact_map_scores.tsv", sep="\t")
+    want_c = pd.read_csv(REFERENCE_ROOT / "FigureS1C_contact_allele_delta/panelC_contact_map_scores.tsv", sep="\t")
+    joined_c = got_c.merge(want_c, on=["track_name", "biosample_name"], suffixes=("_generated", "_reference"))
+    results["panelC_scores"] = _numeric_summary(joined_c["raw_score_generated"], joined_c["raw_score_reference"], rtol=0.0, atol=0.01, min_pearson=0.95)
+
+    got_null = pd.read_csv(out / "panelC_local_snv_null.tsv", sep="\t")
+    want_null = pd.read_csv(REFERENCE_ROOT / "FigureS1C_contact_allele_delta/panelC_local_snv_null.tsv", sep="\t")
+    got_pct = float((got_null["delta_contact_virtual4c_pm1bin"] >= got_null["observed_rs12740374_delta_contact_virtual4c_pm1bin"].iloc[0]).mean())
+    want_pct = float((want_null["delta_contact_virtual4c_pm1bin"] >= want_null["observed_rs12740374_delta_contact_virtual4c_pm1bin"].iloc[0]).mean())
+    results["panelC_null_right_tail_fraction"] = {"pass": abs(got_pct - want_pct) <= 0.15, "generated": got_pct, "reference": want_pct, "n": len(got_null)}
+    return {"pass": all(bool(item["pass"]) for item in results.values()), "values": results}
+
+
+def compare_figs1d(run_dir: Path) -> dict[str, object]:
+    """Reference-only ALL_FOLDS prediction across every ontology -- a
+    fixed, non-bootstrapped quantity, so require both a tight per-row
+    tolerance and a strong overall correlation."""
+    generated = run_dir / "derived/FigureS1D_contact_contexts.tsv"
+    reference = REFERENCE_ROOT / "FigureS1D_contact_contexts.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    joined = got.merge(want, on=["biosample_name", "gene"], suffixes=("_generated", "_reference"), validate="one_to_one")
+    result = _numeric_summary(joined["log_observed_expected_pm1bin_generated"], joined["log_observed_expected_pm1bin_reference"], rtol=0.0, atol=0.1, min_pearson=0.9)
+    return {"pass": len(joined) == len(want) and result["pass"], "rows": len(joined), "values": {"log_observed_expected_pm1bin": result}}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -563,6 +639,7 @@ COMPARATORS = {
     "3A": compare_fig3a, "3B": compare_fig3b, "3C": compare_fig3c, "3E": compare_fig3e,
     "3F": compare_fig3f, "3G": compare_fig3g, "4B": compare_fig4b, "4C": compare_fig4c,
     "4E": compare_fig4e, "4F": compare_fig4f, "4G": compare_fig4g, "4H": compare_fig4h,
+    "S1A": compare_figs1a, "S1B": compare_figs1b, "S1C": compare_figs1c, "S1D": compare_figs1d,
 }
 
 
@@ -694,6 +771,10 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "4F": ("GRCh38 + GENCODE v46 + 4DN HepG2 Hi-C + AlphaGenome API (shares 4E's run)", "ALL_FOLDS"),
         "4G": ("AlphaGenome API (single variant, RNA_SEQ scorer)", "ALL_FOLDS"),
         "4H": ("GRCh38 + AlphaGenome API (exhaustive +/-50kb x 3-alt x 3-tissue ISM)", "ALL_FOLDS"),
+        "S1A": ("4DN HepG2 observed Hi-C (no AlphaGenome; reuses Figure 1D's fetch)", "none"),
+        "S1B": ("4DN HepG2 observed Hi-C + AlphaGenome API (reuses Figure 1D/1E's fetch)", "FOLD_0"),
+        "S1C": ("AlphaGenome API (official ContactMapScorer + WT/ALT + 100 null SNVs)", "ALL_FOLDS"),
+        "S1D": ("AlphaGenome API (reference-only, all ontologies)", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)
