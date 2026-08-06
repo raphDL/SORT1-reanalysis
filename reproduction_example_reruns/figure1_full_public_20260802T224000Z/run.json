@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "error": null,
+  "started_utc": "2026-08-02T20:35:59.409531+00:00",
+  "updated_utc": "2026-08-02T20:41:56.539394+00:00",
+  "panels": [
+    "1B",
+    "1C",
+    "1D",
+    "1E",
+    "1F"
+  ],
+  "run_directory": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z",
+  "repository": {
+    "path": "<local-machine>/alphaGenome/_release/SORT1-reanalysis",
+    "commit": "f0423a73ae04fcd50b1cf915ab0d8fa5791e709f",
+    "branch": "main",
+    "dirty": true
+  },
+  "environment": {
+    "python": "3.12.8",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "packages": {
+      "alphagenome": "not-installed",
+      "alphagenome-research": "not-installed",
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "pysam": "0.23.3",
+      "pyliftover": "0.4.1",
+      "matplotlib": "3.10.1"
+    },
+    "api_key_present": true,
+    "alphagenome_source_checkout": "<local-machine>/alphaGenome/alphagenome/src",
+    "alphagenome_source_commit": "327ea82371197812b337aed8e9e75df63ce5e429"
+  },
+  "command": [
+    "reproduce.py",
+    "--api-key-file",
+    "/Volumes/T7/alphaGenome/AG_API_Key.txt",
+    "run",
+    "--panels",
+    "1B,1C,1D,1E,1F",
+    "--run-dir",
+    "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z",
+    "--gtex-file",
+    "<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/Liver.allpairs.txt.gz",
+    "--onekg-vcf",
+    "<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/enhanced_results/haplotype_context/1kgp_highcov_grch38_sort1_1p13.vcf.gz",
+    "--onekg-panel",
+    "<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/enhanced_results/haplotype_context/integrated_call_samples_v3.20130502.ALL.panel",
+    "--batch-size",
+    "8",
+    "--max-workers",
+    "4"
+  ],
+  "reproduction_code": [
+    {
+      "path": "reproduce.py",
+      "bytes": 12822,
+      "sha256": "0318fb5c0be41275a147893662c72753805b7d46736e5254764a4aa57ce08f5b"
+    },
+    {
+      "path": "reproduction/__init__.py",
+      "bytes": 72,
+      "sha256": "ed9010e9708a159da43e98f7993611d2bf5ef32161c2f3c5381f6ee294ddd199"
+    },
+    {
+      "path": "reproduction/common.py",
+      "bytes": 13098,
+      "sha256": "170f6eb17afd40a31538064de15d734c14aa44065978a5f374b5c34811f3444b"
+    },
+    {
+      "path": "reproduction/figure1.py",
+      "bytes": 24311,
+      "sha256": "08b93d844eaddd5524ae9be49862f7fff4b668839a8a9dde64bf59e8e2119220"
+    },
+    {
+      "path": "reproduction/figure1_public.py",
+      "bytes": 12157,
+      "sha256": "a9626d41daf66048966a1720be67e7dd6700e1621360b6f68d2835ad8d29d195"
+    },
+    {
+      "path": "reproduction/figure2.py",
+      "bytes": 43967,
+      "sha256": "9b7bfd442e0bbd6d8cd0ff74e76f49704033281abb22db4d4a4197bf2f8eccde"
+    },
+    {
+      "path": "reproduction/report.py",
+      "bytes": 22017,
+      "sha256": "9f07a68be11bccb5a381435c6f9f6b71d7b3a74c3f7c2395e79b7395e2fd3ea3"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Figure 1C: stage GTEx v7 and 1000 Genomes public inputs",
+      "started_utc": "2026-08-02T20:35:59.472188+00:00",
+      "status": "complete",
+      "elapsed_seconds": 9.091
+    },
+    {
+      "name": "1B: AlphaGenome locus tracks and rendering",
+      "started_utc": "2026-08-02T20:36:08.678953+00:00",
+      "status": "complete",
+      "elapsed_seconds": 7.33
+    },
+    {
+      "name": "1C-middle: download GLGC, LiftOver chain, and hg38",
+      "started_utc": "2026-08-02T20:36:16.110233+00:00",
+      "status": "complete",
+      "elapsed_seconds": 165.912
+    },
+    {
+      "name": "1C-middle: reconstruct the 111-variant set",
+      "started_utc": "2026-08-02T20:39:02.143350+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.33
+    },
+    {
+      "name": "1C-middle: score variants 1-8",
+      "started_utc": "2026-08-02T20:39:04.733500+00:00",
+      "status": "complete",
+      "elapsed_seconds": 3.0
+    },
+    {
+      "name": "1C-middle: score variants 9-16",
+      "started_utc": "2026-08-02T20:39:07.882036+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.44
+    },
+    {
+      "name": "1C-middle: score variants 17-24",
+      "started_utc": "2026-08-02T20:39:10.516328+00:00",
+      "status": "complete",
+      "elapsed_seconds": 3.155
+    },
+    {
+      "name": "1C-middle: score variants 25-32",
+      "started_utc": "2026-08-02T20:39:13.835675+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.79
+    },
+    {
+      "name": "1C-middle: score variants 33-40",
+      "started_utc": "2026-08-02T20:39:16.756956+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.721
+    },
+    {
+      "name": "1C-middle: score variants 41-48",
+      "started_utc": "2026-08-02T20:39:19.596313+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.544
+    },
+    {
+      "name": "1C-middle: score variants 49-56",
+      "started_utc": "2026-08-02T20:39:22.256695+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.892
+    },
+    {
+      "name": "1C-middle: score variants 57-64",
+      "started_utc": "2026-08-02T20:39:25.384803+00:00",
+      "status": "complete",
+      "elapsed_seconds": 3.0
+    },
+    {
+      "name": "1C-middle: score variants 65-72",
+      "started_utc": "2026-08-02T20:39:28.553828+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.717
+    },
+    {
+      "name": "1C-middle: score variants 73-80",
+      "started_utc": "2026-08-02T20:39:31.447956+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.6
+    },
+    {
+      "name": "1C-middle: score variants 81-88",
+      "started_utc": "2026-08-02T20:39:34.156064+00:00",
+      "status": "complete",
+      "elapsed_seconds": 3.713
+    },
+    {
+      "name": "1C-middle: score variants 89-96",
+      "started_utc": "2026-08-02T20:39:38.043683+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.707
+    },
+    {
+      "name": "1C-middle: score variants 97-104",
+      "started_utc": "2026-08-02T20:39:40.867622+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.666
+    },
+    {
+      "name": "1C-middle: score variants 105-111",
+      "started_utc": "2026-08-02T20:39:43.679161+00:00",
+      "status": "complete",
+      "elapsed_seconds": 3.211
+    },
+    {
+      "name": "1C: reconstruct GTEx and EUR-tagging panels",
+      "started_utc": "2026-08-02T20:39:47.154551+00:00",
+      "status": "complete",
+      "elapsed_seconds": 95.283
+    },
+    {
+      "name": "1E: AlphaGenome FOLD_0 contact map and rendering",
+      "started_utc": "2026-08-02T20:41:22.591220+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.003
+    },
+    {
+      "name": "1D/1F: extract public 4DN HepG2 observed Hi-C",
+      "started_utc": "2026-08-02T20:41:24.726930+00:00",
+      "status": "complete",
+      "elapsed_seconds": 31.684
+    }
+  ],
+  "downloads": [
+    {
+      "url": "supplied:<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/Liver.allpairs.txt.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z/raw/Liver.allpairs.txt.gz",
+      "bytes": 3702606276,
+      "sha256": "372afa081939868407afef0322638b8a191e9f05b1451b6a873fdd04e5d81f67"
+    },
+    {
+      "url": "supplied:<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/enhanced_results/haplotype_context/integrated_call_samples_v3.20130502.ALL.panel",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z/raw/integrated_call_samples_v3.20130502.ALL.panel",
+      "bytes": 55156,
+      "sha256": "b4023dc6ee2d62ee89c8d4d347db4d348e65518d66d346574cdae7a4bbd76858"
+    },
+    {
+      "url": "supplied:<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/enhanced_results/haplotype_context/1kgp_highcov_grch38_sort1_1p13.vcf.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z/raw/1kgp_chr1_sort1.vcf.gz",
+      "bytes": 1223305,
+      "sha256": "8b5ee6b3c7956cac6af185ce55125f89dd4952da27fc31554e75ca53aeb1f3b0"
+    },
+    {
+      "url": "supplied:<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/enhanced_results/haplotype_context/1kgp_highcov_grch38_sort1_1p13.vcf.gz.tbi",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z/raw/1kgp_chr1_sort1.vcf.gz.tbi",
+      "bytes": 370,
+      "sha256": "e7769ed6b2ddd0c5ba382fc71d89c37918308561f350961c9d4a75b1a5d318f5"
+    },
+    {
+      "url": "https://csg.sph.umich.edu/willer/public/lipids2013/jointGwasMc_LDL.txt.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z/raw/jointGwasMc_LDL.txt.gz",
+      "bytes": 58851380,
+      "sha256": "ddf75ed591ffcce8c3e81ae2f4c77f4428cd7dbf4628b24467aa8cf6e85e3dce",
+      "reused": false,
+      "attempts": 1
+    },
+    {
+      "url": "https://imputationserver.sph.umich.edu/resources/chain/hg19_to_hg38.over.chain.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z/raw/hg19ToHg38.over.chain.gz",
+      "bytes": 227698,
+      "sha256": "5c0598e500ceb5a78c73086929e8ef993aec309bcafb595139b53d440b125a1d",
+      "reused": false,
+      "attempts": 1
+    },
+    {
+      "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure1_full_public_20260802T224000Z/raw/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz",
+      "bytes": 872949833,
+      "sha256": "fb4243ebb014caf27111f24dd62b7ce42160f28581da6f8fcd6cba5977778d02",
+      "reused": false,
+      "attempts": 1
+    },
+    {
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/25104375-a588-46e6-a382-663cee6c332f/4DNFICSTCJQZ.hic",
+      "path": "remote byte-range access",
+      "bytes": 14732267572,
+      "sha256": "S3 ETag ca98fe976d7321969696347d167ba35c-1757"
+    }
+  ],
+  "api_calls": {
+    "1B": 1,
+    "1C-middle": 111,
+    "1E": 1
+  },
+  "api_requests": {
+    "1B": 1,
+    "1C-middle": 14,
+    "1E": 1
+  },
+  "disk_bytes": 7984594057,
+  "peak_rss_bytes": 981516288
+}

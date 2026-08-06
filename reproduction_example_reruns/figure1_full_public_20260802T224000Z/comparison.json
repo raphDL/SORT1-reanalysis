@@ -1,0 +1,508 @@
+{
+  "created_utc": "2026-08-02T20:43:17.029508+00:00",
+  "comparison_code": {
+    "path": "reproduction/report.py",
+    "bytes": 22078,
+    "sha256": "ec539ebe1012f01d521683becb3647374b4dc0ba5850b9f18cb7715dc95bb676"
+  },
+  "reference_root": "<local-machine>/alphaGenome/_release/SORT1-reanalysis/outputs/source_data",
+  "note": "Reference outputs were accessed only by this post-run comparison stage.",
+  "pass": true,
+  "panels": {
+    "1B": {
+      "pass": true,
+      "generated_sha256": "1bf317ece544c29ba9693236e6687ad42c6e4d78a382aa5ae38b56bdbf33e674",
+      "reference_sha256": "1bf317ece544c29ba9693236e6687ad42c6e4d78a382aa5ae38b56bdbf33e674",
+      "arrays": {
+        "atac_alt": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "atac_ref": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "atac_resolution": {
+          "pass": true
+        },
+        "atac_start": {
+          "pass": true
+        },
+        "cebpa_alt": {
+          "pass": true,
+          "n": 4096,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "cebpa_ref": {
+          "pass": true,
+          "n": 4096,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "cebpa_resolution": {
+          "pass": true
+        },
+        "cebpa_start": {
+          "pass": true
+        },
+        "dnase_alt": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "dnase_ref": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999999,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "dnase_resolution": {
+          "pass": true
+        },
+        "dnase_start": {
+          "pass": true
+        },
+        "rna_minus_alt": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "rna_minus_ref": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "rna_minus_resolution": {
+          "pass": true
+        },
+        "rna_minus_start": {
+          "pass": true
+        },
+        "rna_plus_alt": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "rna_plus_ref": {
+          "pass": true,
+          "n": 524288,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-06
+        },
+        "rna_plus_resolution": {
+          "pass": true
+        },
+        "rna_plus_start": {
+          "pass": true
+        }
+      }
+    },
+    "1C": {
+      "pass": true,
+      "variant_set_exact": true,
+      "values": {
+        "eqtl_liver_SORT1": {
+          "pass": true,
+          "n": 108,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_SORT1_se": {
+          "pass": true,
+          "n": 109,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_SORT1_p": {
+          "pass": true,
+          "n": 109,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_CELSR2": {
+          "pass": true,
+          "n": 108,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_CELSR2_se": {
+          "pass": true,
+          "n": 109,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_CELSR2_p": {
+          "pass": true,
+          "n": 109,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_PSRC1": {
+          "pass": true,
+          "n": 108,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_PSRC1_se": {
+          "pass": true,
+          "n": 109,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "eqtl_liver_PSRC1_p": {
+          "pass": true,
+          "n": 109,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "tagging_ptag_EUR": {
+          "pass": true,
+          "n": 109,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "tagging_covvar_EUR": {
+          "pass": true,
+          "n": 108,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "ag_rna_liver_SORT1": {
+          "pass": true,
+          "n": 111,
+          "max_abs_difference": 9.999999960041972e-13,
+          "mean_abs_difference": 7.568468221495812e-14,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "ag_rna_liver_CELSR2": {
+          "pass": true,
+          "n": 111,
+          "max_abs_difference": 1.000000082740371e-11,
+          "mean_abs_difference": 2.121621657647609e-13,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "ag_rna_liver_PSRC1": {
+          "pass": true,
+          "n": 111,
+          "max_abs_difference": 1.9999991246466564e-12,
+          "mean_abs_difference": 1.627927916759026e-13,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "ag_model_snp_plus_covvar_rs127_for_plot_SORT1": {
+          "pass": true,
+          "n": 111,
+          "max_abs_difference": 1.000000082740371e-11,
+          "mean_abs_difference": 1.5064865552230918e-12,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "ag_model_snp_plus_covvar_rs127_for_plot_CELSR2": {
+          "pass": true,
+          "n": 111,
+          "max_abs_difference": 1.000000082740371e-10,
+          "mean_abs_difference": 1.162522468570532e-11,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        },
+        "ag_model_snp_plus_covvar_rs127_for_plot_PSRC1": {
+          "pass": true,
+          "n": 111,
+          "max_abs_difference": 1.000000082740371e-10,
+          "mean_abs_difference": 1.595495577419198e-11,
+          "pearson_r": 0.9999999999999999,
+          "minimum_pearson_r": null,
+          "rtol": 0.0001,
+          "atol": 1e-05
+        }
+      }
+    },
+    "1D": {
+      "pass": true,
+      "coordinates": {
+        "pass": true,
+        "n": 113,
+        "max_abs_difference": 0.0,
+        "mean_abs_difference": 0.0,
+        "pearson_r": 1.0,
+        "minimum_pearson_r": null,
+        "rtol": 1e-05,
+        "atol": 1e-06
+      },
+      "matrix": {
+        "pass": true,
+        "n": 12769,
+        "max_abs_difference": 0.0,
+        "mean_abs_difference": 0.0,
+        "pearson_r": 1.0,
+        "minimum_pearson_r": null,
+        "rtol": 1e-05,
+        "atol": 1e-05
+      }
+    },
+    "1E": {
+      "pass": true,
+      "coordinates": {
+        "pass": true,
+        "n": 110,
+        "max_abs_difference": 0.0,
+        "mean_abs_difference": 0.0,
+        "pearson_r": 1.0,
+        "minimum_pearson_r": null,
+        "rtol": 1e-05,
+        "atol": 1e-06
+      },
+      "matrix": {
+        "pass": true,
+        "n": 12100,
+        "max_abs_difference": 5.000000025123796e-09,
+        "mean_abs_difference": 1.6202014783599745e-09,
+        "pearson_r": 0.9999999999999999,
+        "minimum_pearson_r": null,
+        "rtol": 1e-05,
+        "atol": 1e-06
+      }
+    },
+    "1F": {
+      "pass": true,
+      "rows": 6,
+      "values": {
+        "resolution_bp": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "flank_bins": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": null,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "window_width_bp_each_axis": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "anchor_bin": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "target_bin": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "variant_to_tss_bp": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "contact_value": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 3.9736429924275285e-08,
+          "mean_abs_difference": 7.795514887544893e-09,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "same_distance_n": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "same_distance_mean": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 2.9733610018567447e-10,
+          "mean_abs_difference": 1.2408003270680812e-10,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "same_distance_sd": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 1.3762234962744202e-09,
+          "mean_abs_difference": 4.786393873838316e-10,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "same_distance_z": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 9.823554147914138e-08,
+          "mean_abs_difference": 2.3509593864249705e-08,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "same_distance_percentile": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        },
+        "same_distance_high_p_plus1": {
+          "pass": true,
+          "n": 6,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": null,
+          "rtol": 1e-05,
+          "atol": 1e-05
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "created_utc": "2026-08-05T18:25:11.793740+00:00",
+  "comparison_code": {
+    "path": "reproduction/report.py",
+    "bytes": 40063,
+    "sha256": "43159c9aac0afd3a70c46d5c438b4e6b4f22b952b34d2df03918ea534ce94c43"
+  },
+  "reference_root": "<local-machine>/alphaGenome/_release/SORT1-reanalysis/outputs/source_data",
+  "note": "Reference outputs were accessed only by this post-run comparison stage.",
+  "pass": true,
+  "panels": {
+    "4G": {
+      "pass": true,
+      "rows": 7,
+      "values": {
+        "SORT1": {
+          "pass": true,
+          "n": 7,
+          "max_abs_difference": 0.0012991847470403004,
+          "mean_abs_difference": 0.000982223122957229,
+          "pearson_r": 0.9995159416336029,
+          "minimum_pearson_r": 0.999,
+          "rtol": 0.0,
+          "atol": 0.01
+        },
+        "PSRC1": {
+          "pass": true,
+          "n": 7,
+          "max_abs_difference": 0.0022607147693634033,
+          "mean_abs_difference": 0.001394532266117276,
+          "pearson_r": 0.9999825605562592,
+          "minimum_pearson_r": 0.999,
+          "rtol": 0.0,
+          "atol": 0.01
+        },
+        "CELSR2": {
+          "pass": true,
+          "n": 7,
+          "max_abs_difference": 0.0035150845845540735,
+          "mean_abs_difference": 0.0014752770463625805,
+          "pearson_r": 0.9999783920043516,
+          "minimum_pearson_r": 0.999,
+          "rtol": 0.0,
+          "atol": 0.01
+        }
+      }
+    }
+  }
+}

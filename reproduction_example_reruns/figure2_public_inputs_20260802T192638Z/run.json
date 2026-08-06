@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "error": null,
+  "started_utc": "2026-08-02T19:56:48.916296+00:00",
+  "updated_utc": "2026-08-02T19:56:57.041736+00:00",
+  "panels": [
+    "2B",
+    "2C",
+    "2E",
+    "2F"
+  ],
+  "run_directory": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_public_inputs_20260802T192638Z",
+  "repository": {
+    "path": "<local-machine>/alphaGenome/_release/SORT1-reanalysis",
+    "commit": "f0423a73ae04fcd50b1cf915ab0d8fa5791e709f",
+    "branch": "main",
+    "dirty": true
+  },
+  "environment": {
+    "python": "3.12.8",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "packages": {
+      "alphagenome": "not-installed",
+      "alphagenome-research": "not-installed",
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "pysam": "0.23.3",
+      "pyliftover": "0.4.1",
+      "matplotlib": "3.10.1"
+    },
+    "api_key_present": true,
+    "alphagenome_source_checkout": "<local-machine>/alphaGenome/alphagenome/src",
+    "alphagenome_source_commit": "327ea82371197812b337aed8e9e75df63ce5e429"
+  },
+  "command": [
+    "reproduce.py",
+    "--api-key-file",
+    "/Volumes/T7/alphaGenome/AG_API_Key.txt",
+    "run",
+    "--panels",
+    "2B,2C,2E,2F",
+    "--wang-xls",
+    "<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_wang_et_al_indels/atv310103_ds.xls",
+    "--run-dir",
+    "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_public_inputs_20260802T192638Z",
+    "--resume",
+    "--batch-size",
+    "8",
+    "--max-workers",
+    "4",
+    "--ism-chunk-size",
+    "10",
+    "--ism-max-workers",
+    "1"
+  ],
+  "reproduction_code": [
+    {
+      "path": "reproduce.py",
+      "bytes": 10565,
+      "sha256": "39b6801ac4e2aa6cca892d3c5992abd7776146846eec5cc6507706cb2ff524f8"
+    },
+    {
+      "path": "reproduction/__init__.py",
+      "bytes": 72,
+      "sha256": "ed9010e9708a159da43e98f7993611d2bf5ef32161c2f3c5381f6ee294ddd199"
+    },
+    {
+      "path": "reproduction/common.py",
+      "bytes": 13098,
+      "sha256": "170f6eb17afd40a31538064de15d734c14aa44065978a5f374b5c34811f3444b"
+    },
+    {
+      "path": "reproduction/figure1.py",
+      "bytes": 24264,
+      "sha256": "33bbcd2273448bbf62829ddb20c5e8addd0552795f4a22ff27b4d1cbb2d9117a"
+    },
+    {
+      "path": "reproduction/figure2.py",
+      "bytes": 43967,
+      "sha256": "9b7bfd442e0bbd6d8cd0ff74e76f49704033281abb22db4d4a4197bf2f8eccde"
+    },
+    {
+      "path": "reproduction/report.py",
+      "bytes": 18994,
+      "sha256": "b30af8dd717142f82f1762eb42598a122d3795c0fef466da0d59b10744adc56d"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Figure 2: download and checksum original public inputs",
+      "started_utc": "2026-08-02T19:56:49.019954+00:00",
+      "status": "complete",
+      "elapsed_seconds": 4.378
+    },
+    {
+      "name": "2B: reconstruct Wang repair products and score liver RNA",
+      "started_utc": "2026-08-02T19:56:53.541323+00:00",
+      "status": "complete",
+      "elapsed_seconds": 0.971
+    },
+    {
+      "name": "2C: construct and score the 11-by-11 deletion grid",
+      "started_utc": "2026-08-02T19:56:54.662518+00:00",
+      "status": "complete",
+      "elapsed_seconds": 0.334
+    },
+    {
+      "name": "2E: score the 1,798-substitution SORT1 Kircher benchmark",
+      "started_utc": "2026-08-02T19:56:55.156051+00:00",
+      "status": "complete",
+      "elapsed_seconds": 0.711
+    },
+    {
+      "name": "2F: score the six-element Kircher accessibility benchmark",
+      "started_utc": "2026-08-02T19:56:56.039705+00:00",
+      "status": "complete",
+      "elapsed_seconds": 0.829
+    }
+  ],
+  "downloads": [
+    {
+      "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_public_inputs_20260802T192638Z/raw/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz",
+      "bytes": 872949833,
+      "sha256": "fb4243ebb014caf27111f24dd62b7ce42160f28581da6f8fcd6cba5977778d02",
+      "reused": true
+    },
+    {
+      "url": "manual_original_file:atv310103_ds.xls",
+      "publisher_url": "https://www.ahajournals.org/action/downloadSupplement?doi=10.1161%2FATVBAHA.117.310103&file=atv310103_ds.xls",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_public_inputs_20260802T192638Z/raw/atv310103_ds.xls",
+      "bytes": 126976,
+      "sha256": "99a2d4218e3e3a9afdd04ecded3a38878c001272f42eaadc99b8c3caeeefa049",
+      "reused": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/kircherlab/MPRA_SaturationMutagenesis/05d2ffb965090d3f5dd27dfb038cec493a15ab35/data/elements.tsv.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure2_public_inputs_20260802T192638Z/raw/kircher_elements.tsv.gz",
+      "bytes": 2677485,
+      "sha256": "fec2eed91fe27af3aae07ebce2eca65e9bad4bb6abba5d8c27f478887dd7b134",
+      "reused": true
+    }
+  ],
+  "api_calls": {},
+  "api_requests": {},
+  "disk_bytes": 4029987423,
+  "peak_rss_bytes": 412696576
+}

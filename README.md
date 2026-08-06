@@ -7,6 +7,27 @@ sequence-to-function evidence chain — eQTL/tagging prioritization, observed
 vs. predicted 3D contact, in-silico saturation mutagenesis, and cross-context
 module-transfer/portability tests — reported in the accompanying manuscript.
 
+## Reproducibility capsule
+
+**To reproduce the figures and data from scratch — no access to the
+authors' working archive, no reused predictions — go to
+[`reproduce.py`](reproduce.py) and [`reproduction/`](reproduction/).**
+That is the entire clean-room capsule: a single CLI (`doctor` / `prepare` /
+`run` / `compare`) that downloads every public input fresh, calls the
+AlphaGenome API fresh for every prediction, and checksums the result
+against this repository's own frozen publication tables in
+`outputs/source_data/`. See "Reproducing Figure N analyses from scratch"
+below for the exact commands per figure, and the "Reproducibility model"
+section for what each of the four subcommands does and does not touch.
+
+Evidence that this capsule has actually been run end-to-end — not just
+written — is in [`reproduction_example_reruns/`](reproduction_example_reruns/):
+audit trails (timestamps, exact commit, per-panel PASS/FAIL, timings, API
+call counts) from real executions on a separate machine/volume from the
+development checkout, each starting from an empty run directory so every
+download and every prediction in them was freshly fetched or scored for
+that run.
+
 ## Repository status
 
 The submission snapshot is frozen under `manuscript/` and
@@ -188,23 +209,64 @@ Figure 2B, 2C, 2E, and 2F are supported by the same isolated runner. Figure
 
 ## Reproducing Figure 3 analyses from scratch
 
-Figure 3B is now supported as a checkpointed clean-room AlphaGenome run. It
-constructs the intact rs12740374-T sequence from downloaded GRCh38, predicts
-the intact baseline and every three-way substitution across the 501-bp native
-locus, and derives the three-gene positional loss profile and hotspots without
-reading publication tables:
+Figure 3A, 3B, 3C, 3E, 3F, and 3G are all supported as checkpointed
+clean-room AlphaGenome runs. Figure 3B constructs the intact rs12740374-T
+sequence from downloaded GRCh38, predicts the intact baseline and every
+three-way substitution across the 501-bp native locus, and derives the
+three-gene positional loss profile and hotspots without reading
+publication tables; 3C is a deterministic downstream JASPAR 2024 analysis
+of the 3B substitutions (no additional API calls); 3A is a two-stage
+regional (100kb) coordinated-RNA ISM scan; 3E/3F/3G are directional
+single-arm motif-protected recovery, a wide boundary grid, and an expanded
+component-necessity audit, respectively. Figure 3D is an author-layout
+schematic.
 
 ```bash
 python reproduce.py --api-key-file /secure/path/alphagenome.key run \
-  --panels 3B --batch-size 24 --max-workers 4 \
+  --panels 3A,3B,3C,3E,3F,3G --batch-size 24 --max-workers 4 \
   --run-dir /data/figure3_clean
 python reproduce.py compare --run-dir /data/figure3_clean
 ```
 
-Figure 3C is a deterministic downstream JASPAR 2024 analysis of the newly
-generated 3B substitutions. Figure 3A and 3E--G are larger AlphaGenome screens
-and are being ported to the same clean-room runner. Figure 3D is an
-author-layout schematic.
+3C and 3A/3E/3F/3G each depend on 3B's native-locus ISM output; `run`
+regenerates that prerequisite automatically if it isn't already present in
+the run directory.
+
+## Reproducing Figure 4 analyses from scratch
+
+Figure 4B, 4C, 4E, 4F, and 4G are supported as checkpointed clean-room
+AlphaGenome runs, all real and freshly scored:
+
+- **4B:** a 315bp asymmetric donor (rs12740374 major/minor allele core)
+  transferred to 100 low-expression liver recipient TSSs across eight
+  upstream distances;
+- **4C:** the same donor-transfer design at a fixed 30bp distance across
+  HPA v24.1 liver-expression bottom/middle/top-500 gene cohorts (fully
+  re-derived from the public HPA download at run time, not frozen);
+- **4E/4F:** a chromosome-1, Hi-C-guided high/low distal-contact-site
+  selection (from the public 4DN HepG2 Hi-C map, zero AlphaGenome cost)
+  followed by real 315bp T/G transfer scoring at each selected site
+  (13,517 predictions);
+- **4G:** a single AlphaGenome variant-scoring call (rs12740374, RNA_SEQ)
+  across tissue ontologies.
+
+```bash
+python reproduce.py --api-key-file /secure/path/alphagenome.key run \
+  --panels 4B,4C,4E,4F,4G --batch-size 32 --max-workers 8 \
+  --run-dir /data/figure4_clean
+python reproduce.py compare --run-dir /data/figure4_clean
+```
+
+Figure 4H (an exhaustive +/-50kb x 3-allele x 3-tissue single-nucleotide
+mutagenesis scan, ~900,000 predictions) is ported (`--panels 4H`) but its
+full run has not been completed — see `REPRODUCIBILITY_NEXT_STEPS.md` for
+why, including a real audited finding that individual-SNP effects at that
+resolution sit at or below AlphaGenome's own measurement drift over time.
+Its reference table, like Figure 4J's (a TF-motif-insertion discovery map,
+~1.6M predicted variants, scoped but not yet ported), is Zenodo-pending
+rather than committed to this repository; both accept a manually supplied,
+checksum-verified copy (`compare --reference-4h-file ...`) in the
+meantime. Figure 4A, 4D, and 4I are author-layout schematics.
 
 - **2B:** reconstruct 50 unique repair products from the original Wang et al.
   spreadsheet, place them on the rs12740374-T background, and predict liver

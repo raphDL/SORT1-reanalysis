@@ -1,0 +1,588 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "error": null,
+  "started_utc": "2026-08-05T12:40:48.615061+00:00",
+  "updated_utc": "2026-08-05T13:12:31.858896+00:00",
+  "panels": [
+    "4B",
+    "4C"
+  ],
+  "run_directory": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure4_bc_20260805",
+  "repository": {
+    "path": "<local-machine>/alphaGenome/_release/SORT1-reanalysis",
+    "commit": "81bb2bff81badee76053740e0673bd35b86a47ac",
+    "branch": "main",
+    "dirty": true
+  },
+  "environment": {
+    "python": "3.12.8",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "packages": {
+      "alphagenome": "not-installed",
+      "alphagenome-research": "not-installed",
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "pysam": "0.23.3",
+      "pyliftover": "0.4.1",
+      "matplotlib": "3.10.1"
+    },
+    "api_key_present": true,
+    "alphagenome_source_checkout": "<local-machine>/alphaGenome/alphagenome/src",
+    "alphagenome_source_commit": "327ea82371197812b337aed8e9e75df63ce5e429"
+  },
+  "command": [
+    "reproduce.py",
+    "run",
+    "--panels",
+    "4B,4C",
+    "--run-dir",
+    "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure4_bc_20260805",
+    "--resume",
+    "--hpa-file",
+    "<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_scramble_no_expression/HPA_rna_tissue_consensus.tsv",
+    "--batch-size",
+    "128",
+    "--max-workers",
+    "8"
+  ],
+  "reproduction_code": [
+    {
+      "path": "reproduce.py",
+      "bytes": 16005,
+      "sha256": "089064815fc4ddd4d8a2c403c89e3c62fcae6b5ff251c4587f9636be99a3fbc1"
+    },
+    {
+      "path": "reproduction/__init__.py",
+      "bytes": 72,
+      "sha256": "ed9010e9708a159da43e98f7993611d2bf5ef32161c2f3c5381f6ee294ddd199"
+    },
+    {
+      "path": "reproduction/common.py",
+      "bytes": 13098,
+      "sha256": "170f6eb17afd40a31538064de15d734c14aa44065978a5f374b5c34811f3444b"
+    },
+    {
+      "path": "reproduction/figure1.py",
+      "bytes": 24311,
+      "sha256": "08b93d844eaddd5524ae9be49862f7fff4b668839a8a9dde64bf59e8e2119220"
+    },
+    {
+      "path": "reproduction/figure1_public.py",
+      "bytes": 12261,
+      "sha256": "30f23301e2d63630a888eca59847768b475c8ca004362e3a2a85afe25303d688"
+    },
+    {
+      "path": "reproduction/figure2.py",
+      "bytes": 45544,
+      "sha256": "fb8e518cfcd4de6ecef4b6965f0a9ef772efb0b7ef4e6593a35df74cb7f51d8f"
+    },
+    {
+      "path": "reproduction/figure3.py",
+      "bytes": 72159,
+      "sha256": "449c7ccc6ede6cd6c84b1cb1c42ff149786b7678a964e442f626920d53064c6c"
+    },
+    {
+      "path": "reproduction/figure4.py",
+      "bytes": 31939,
+      "sha256": "0dddfa0dbdf6b0a94a59197b1848fc10b54b76241377e6631685fadc1db24e22"
+    },
+    {
+      "path": "reproduction/report.py",
+      "bytes": 33953,
+      "sha256": "a300887beefe436246881dd93b8d6141f3f8e33f908b960157f729af113d7332"
+    }
+  ],
+  "steps": [
+    {
+      "name": "4B: bottom100 315bp donor eight-distance sweep",
+      "started_utc": "2026-08-05T12:40:48.692635+00:00",
+      "status": "complete",
+      "elapsed_seconds": 591.591
+    },
+    {
+      "name": "4B/4C: download UCSC-sourced hg38 (the build the working archive actually used)",
+      "started_utc": "2026-08-05T12:40:48.800379+00:00",
+      "status": "complete",
+      "elapsed_seconds": 4.381
+    },
+    {
+      "name": "4B: build 315bp donor + bottom100 distance-sweep design",
+      "started_utc": "2026-08-05T12:40:53.280598+00:00",
+      "status": "complete",
+      "elapsed_seconds": 2.036
+    },
+    {
+      "name": "4B: score states 1-128 of 2500",
+      "started_utc": "2026-08-05T12:40:58.676549+00:00",
+      "status": "complete",
+      "elapsed_seconds": 37.304
+    },
+    {
+      "name": "4B: score states 129-256 of 2500",
+      "started_utc": "2026-08-05T12:41:36.427211+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.235
+    },
+    {
+      "name": "4B: score states 257-384 of 2500",
+      "started_utc": "2026-08-05T12:42:01.919889+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.772
+    },
+    {
+      "name": "4B: score states 385-512 of 2500",
+      "started_utc": "2026-08-05T12:42:28.941980+00:00",
+      "status": "complete",
+      "elapsed_seconds": 28.851
+    },
+    {
+      "name": "4B: score states 513-640 of 2500",
+      "started_utc": "2026-08-05T12:42:58.094273+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.919
+    },
+    {
+      "name": "4B: score states 641-768 of 2500",
+      "started_utc": "2026-08-05T12:43:23.305312+00:00",
+      "status": "complete",
+      "elapsed_seconds": 30.001
+    },
+    {
+      "name": "4B: score states 769-896 of 2500",
+      "started_utc": "2026-08-05T12:43:53.524210+00:00",
+      "status": "complete",
+      "elapsed_seconds": 31.006
+    },
+    {
+      "name": "4B: score states 897-1024 of 2500",
+      "started_utc": "2026-08-05T12:44:24.796136+00:00",
+      "status": "complete",
+      "elapsed_seconds": 28.794
+    },
+    {
+      "name": "4B: score states 1025-1152 of 2500",
+      "started_utc": "2026-08-05T12:44:53.919923+00:00",
+      "status": "complete",
+      "elapsed_seconds": 29.019
+    },
+    {
+      "name": "4B: score states 1153-1280 of 2500",
+      "started_utc": "2026-08-05T12:45:23.188967+00:00",
+      "status": "complete",
+      "elapsed_seconds": 31.501
+    },
+    {
+      "name": "4B: score states 1281-1408 of 2500",
+      "started_utc": "2026-08-05T12:45:55.011725+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.957
+    },
+    {
+      "name": "4B: score states 1409-1536 of 2500",
+      "started_utc": "2026-08-05T12:46:21.292890+00:00",
+      "status": "complete",
+      "elapsed_seconds": 23.449
+    },
+    {
+      "name": "4B: score states 1537-1664 of 2500",
+      "started_utc": "2026-08-05T12:46:45.076414+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.455
+    },
+    {
+      "name": "4B: score states 1665-1792 of 2500",
+      "started_utc": "2026-08-05T12:47:11.825786+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.7
+    },
+    {
+      "name": "4B: score states 1793-1920 of 2500",
+      "started_utc": "2026-08-05T12:47:38.807327+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.127
+    },
+    {
+      "name": "4B: score states 1921-2048 of 2500",
+      "started_utc": "2026-08-05T12:48:03.267965+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.051
+    },
+    {
+      "name": "4B: score states 2049-2176 of 2500",
+      "started_utc": "2026-08-05T12:48:27.614801+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.162
+    },
+    {
+      "name": "4B: score states 2177-2304 of 2500",
+      "started_utc": "2026-08-05T12:48:52.061458+00:00",
+      "status": "complete",
+      "elapsed_seconds": 63.874
+    },
+    {
+      "name": "4B: score states 2305-2432 of 2500",
+      "started_utc": "2026-08-05T12:49:56.282778+00:00",
+      "status": "complete",
+      "elapsed_seconds": 28.166
+    },
+    {
+      "name": "4B: score states 2433-2500 of 2500",
+      "started_utc": "2026-08-05T12:50:24.782624+00:00",
+      "status": "complete",
+      "elapsed_seconds": 14.666
+    },
+    {
+      "name": "4B: compute deltas and summarize by distance",
+      "started_utc": "2026-08-05T12:50:39.862888+00:00",
+      "status": "complete",
+      "elapsed_seconds": 0.211
+    },
+    {
+      "name": "4C: HPA bottom/middle/top-500 cohort fold-change at 30bp",
+      "started_utc": "2026-08-05T12:50:40.554793+00:00",
+      "status": "complete",
+      "elapsed_seconds": 1310.803
+    },
+    {
+      "name": "4B/4C: download UCSC-sourced hg38 (the build the working archive actually used)",
+      "started_utc": "2026-08-05T12:50:40.716469+00:00",
+      "status": "complete",
+      "elapsed_seconds": 4.33
+    },
+    {
+      "name": "4C: stage manually supplied HPA v24.1 consensus tissue RNA expression",
+      "started_utc": "2026-08-05T12:50:45.433485+00:00",
+      "status": "complete",
+      "elapsed_seconds": 0.216
+    },
+    {
+      "name": "4C: download GENCODE v46 annotation feather",
+      "started_utc": "2026-08-05T12:50:45.954620+00:00",
+      "status": "complete",
+      "elapsed_seconds": 16.192
+    },
+    {
+      "name": "4C: select HPA bottom/middle/top-500 cohorts and build 30bp donor-transfer design",
+      "started_utc": "2026-08-05T12:51:02.410175+00:00",
+      "status": "complete",
+      "elapsed_seconds": 8.448
+    },
+    {
+      "name": "4C: score states 1-128 of 5884",
+      "started_utc": "2026-08-05T12:51:19.170331+00:00",
+      "status": "complete",
+      "elapsed_seconds": 30.939
+    },
+    {
+      "name": "4C: score states 129-256 of 5884",
+      "started_utc": "2026-08-05T12:51:50.809123+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.986
+    },
+    {
+      "name": "4C: score states 257-384 of 5884",
+      "started_utc": "2026-08-05T12:52:16.170866+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.144
+    },
+    {
+      "name": "4C: score states 385-512 of 5884",
+      "started_utc": "2026-08-05T12:52:41.696940+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.646
+    },
+    {
+      "name": "4C: score states 513-640 of 5884",
+      "started_utc": "2026-08-05T12:53:07.703558+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.146
+    },
+    {
+      "name": "4C: score states 641-768 of 5884",
+      "started_utc": "2026-08-05T12:53:33.297898+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.973
+    },
+    {
+      "name": "4C: score states 769-896 of 5884",
+      "started_utc": "2026-08-05T12:53:58.614968+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.147
+    },
+    {
+      "name": "4C: score states 897-1024 of 5884",
+      "started_utc": "2026-08-05T12:54:24.120699+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.346
+    },
+    {
+      "name": "4C: score states 1025-1152 of 5884",
+      "started_utc": "2026-08-05T12:54:49.923059+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.405
+    },
+    {
+      "name": "4C: score states 1153-1280 of 5884",
+      "started_utc": "2026-08-05T12:55:16.727680+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.473
+    },
+    {
+      "name": "4C: score states 1281-1408 of 5884",
+      "started_utc": "2026-08-05T12:55:41.599721+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.702
+    },
+    {
+      "name": "4C: score states 1409-1536 of 5884",
+      "started_utc": "2026-08-05T12:56:06.808189+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.375
+    },
+    {
+      "name": "4C: score states 1537-1664 of 5884",
+      "started_utc": "2026-08-05T12:56:33.558448+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.731
+    },
+    {
+      "name": "4C: score states 1665-1792 of 5884",
+      "started_utc": "2026-08-05T12:56:59.689928+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.926
+    },
+    {
+      "name": "4C: score states 1793-1920 of 5884",
+      "started_utc": "2026-08-05T12:57:25.006661+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.984
+    },
+    {
+      "name": "4C: score states 1921-2048 of 5884",
+      "started_utc": "2026-08-05T12:57:51.409131+00:00",
+      "status": "complete",
+      "elapsed_seconds": 24.698
+    },
+    {
+      "name": "4C: score states 2049-2176 of 5884",
+      "started_utc": "2026-08-05T12:58:16.544818+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.273
+    },
+    {
+      "name": "4C: score states 2177-2304 of 5884",
+      "started_utc": "2026-08-05T12:58:43.220534+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.935
+    },
+    {
+      "name": "4C: score states 2305-2432 of 5884",
+      "started_utc": "2026-08-05T12:59:09.571450+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.28
+    },
+    {
+      "name": "4C: score states 2433-2560 of 5884",
+      "started_utc": "2026-08-05T12:59:35.334224+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.752
+    },
+    {
+      "name": "4C: score states 2561-2688 of 5884",
+      "started_utc": "2026-08-05T13:00:02.545174+00:00",
+      "status": "complete",
+      "elapsed_seconds": 32.356
+    },
+    {
+      "name": "4C: score states 2689-2816 of 5884",
+      "started_utc": "2026-08-05T13:00:35.367179+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.454
+    },
+    {
+      "name": "4C: score states 2817-2944 of 5884",
+      "started_utc": "2026-08-05T13:01:02.321098+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.861
+    },
+    {
+      "name": "4C: score states 2945-3072 of 5884",
+      "started_utc": "2026-08-05T13:01:28.674904+00:00",
+      "status": "complete",
+      "elapsed_seconds": 41.824
+    },
+    {
+      "name": "4C: score states 3073-3200 of 5884",
+      "started_utc": "2026-08-05T13:02:11.002323+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.797
+    },
+    {
+      "name": "4C: score states 3201-3328 of 5884",
+      "started_utc": "2026-08-05T13:02:38.240680+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.496
+    },
+    {
+      "name": "4C: score states 3329-3456 of 5884",
+      "started_utc": "2026-08-05T13:03:04.188454+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.742
+    },
+    {
+      "name": "4C: score states 3457-3584 of 5884",
+      "started_utc": "2026-08-05T13:03:30.477996+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.11
+    },
+    {
+      "name": "4C: score states 3585-3712 of 5884",
+      "started_utc": "2026-08-05T13:03:57.085789+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.232
+    },
+    {
+      "name": "4C: score states 3713-3840 of 5884",
+      "started_utc": "2026-08-05T13:04:23.790771+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.719
+    },
+    {
+      "name": "4C: score states 3841-3968 of 5884",
+      "started_utc": "2026-08-05T13:04:49.951164+00:00",
+      "status": "complete",
+      "elapsed_seconds": 28.574
+    },
+    {
+      "name": "4C: score states 3969-4096 of 5884",
+      "started_utc": "2026-08-05T13:05:19.013155+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.978
+    },
+    {
+      "name": "4C: score states 4097-4224 of 5884",
+      "started_utc": "2026-08-05T13:05:45.460374+00:00",
+      "status": "complete",
+      "elapsed_seconds": 27.239
+    },
+    {
+      "name": "4C: score states 4225-4352 of 5884",
+      "started_utc": "2026-08-05T13:06:13.220907+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.397
+    },
+    {
+      "name": "4C: score states 4353-4480 of 5884",
+      "started_utc": "2026-08-05T13:06:40.131428+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.659
+    },
+    {
+      "name": "4C: score states 4481-4608 of 5884",
+      "started_utc": "2026-08-05T13:07:06.324555+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.743
+    },
+    {
+      "name": "4C: score states 4609-4736 of 5884",
+      "started_utc": "2026-08-05T13:07:33.611344+00:00",
+      "status": "complete",
+      "elapsed_seconds": 29.891
+    },
+    {
+      "name": "4C: score states 4737-4864 of 5884",
+      "started_utc": "2026-08-05T13:08:04.032524+00:00",
+      "status": "complete",
+      "elapsed_seconds": 29.916
+    },
+    {
+      "name": "4C: score states 4865-4992 of 5884",
+      "started_utc": "2026-08-05T13:08:34.489516+00:00",
+      "status": "complete",
+      "elapsed_seconds": 34.925
+    },
+    {
+      "name": "4C: score states 4993-5120 of 5884",
+      "started_utc": "2026-08-05T13:09:09.942114+00:00",
+      "status": "complete",
+      "elapsed_seconds": 31.163
+    },
+    {
+      "name": "4C: score states 5121-5248 of 5884",
+      "started_utc": "2026-08-05T13:09:41.635116+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.731
+    },
+    {
+      "name": "4C: score states 5249-5376 of 5884",
+      "started_utc": "2026-08-05T13:10:08.976824+00:00",
+      "status": "complete",
+      "elapsed_seconds": 27.697
+    },
+    {
+      "name": "4C: score states 5377-5504 of 5884",
+      "started_utc": "2026-08-05T13:10:37.259132+00:00",
+      "status": "complete",
+      "elapsed_seconds": 27.354
+    },
+    {
+      "name": "4C: score states 5505-5632 of 5884",
+      "started_utc": "2026-08-05T13:11:05.213597+00:00",
+      "status": "complete",
+      "elapsed_seconds": 25.954
+    },
+    {
+      "name": "4C: score states 5633-5760 of 5884",
+      "started_utc": "2026-08-05T13:11:31.770316+00:00",
+      "status": "complete",
+      "elapsed_seconds": 26.603
+    },
+    {
+      "name": "4C: score states 5761-5884 of 5884",
+      "started_utc": "2026-08-05T13:11:58.940856+00:00",
+      "status": "complete",
+      "elapsed_seconds": 28.659
+    },
+    {
+      "name": "4C: compute fold changes by cohort",
+      "started_utc": "2026-08-05T13:12:28.495261+00:00",
+      "status": "complete",
+      "elapsed_seconds": 0.325
+    }
+  ],
+  "downloads": [
+    {
+      "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure4_bc_20260805/raw/ucsc_hg38.fa.gz",
+      "bytes": 983659424,
+      "sha256": "c1dd87068c254eb53d944f71e51d1311964fce8de24d6fc0effc9c61c01527d4",
+      "reused": true
+    },
+    {
+      "url": "supplied:<local-machine>/alphaGenome/investigation/SORT1_cholesterol_musunuru_2010/report/panel_scramble_no_expression/HPA_rna_tissue_consensus.tsv",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure4_bc_20260805/raw/rna_tissue_consensus.tsv",
+      "bytes": 39004810,
+      "sha256": "cdedaeaf3cdfc89e22b3891ea24ae2afabc0afd26d8883076121a363608450b6",
+      "reused": false
+    },
+    {
+      "url": "https://storage.googleapis.com/alphagenome/reference/gencode/hg38/gencode.v46.annotation.gtf.gz.feather",
+      "path": "/Volumes/T7/alphaGenome/repro_crash_test/runs/figure4_bc_20260805/raw/gencode.v46.annotation.gtf.gz.feather",
+      "bytes": 333040258,
+      "sha256": "7b10f643d96e1142ef058d9c08487f4360552cea29c8339f195a5a96489dbb4c",
+      "reused": false,
+      "attempts": 1
+    }
+  ],
+  "api_calls": {
+    "4B": 2500,
+    "4C": 5884
+  },
+  "api_requests": {
+    "4B": 20,
+    "4C": 46
+  },
+  "disk_bytes": 4636106304,
+  "peak_rss_bytes": 5743624192
+}

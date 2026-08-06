@@ -1,0 +1,95 @@
+{
+  "created_utc": "2026-08-05T13:13:59.146358+00:00",
+  "comparison_code": {
+    "path": "reproduction/report.py",
+    "bytes": 34166,
+    "sha256": "f7fb149a470fc43cd8b4d6b4f63d8c32ba92e9524c872543ee573c51ece6bc20"
+  },
+  "reference_root": "<local-machine>/alphaGenome/_release/SORT1-reanalysis/outputs/source_data",
+  "note": "Reference outputs were accessed only by this post-run comparison stage.",
+  "pass": true,
+  "panels": {
+    "4B": {
+      "pass": true,
+      "rows": 16,
+      "values": {
+        "mean": {
+          "pass": true,
+          "n": 16,
+          "max_abs_difference": 0.0003320568607788066,
+          "mean_abs_difference": 5.62731110557505e-05,
+          "pearson_r": 0.9999990834298322,
+          "minimum_pearson_r": 0.98,
+          "rtol": 0.0,
+          "atol": 0.02
+        },
+        "median": {
+          "pass": true,
+          "n": 16,
+          "max_abs_difference": 0.00014513751300089875,
+          "mean_abs_difference": 2.7903717607381436e-05,
+          "pearson_r": 0.9999837491049663,
+          "minimum_pearson_r": 0.98,
+          "rtol": 0.0,
+          "atol": 0.02
+        },
+        "sem": {
+          "pass": true,
+          "n": 16,
+          "max_abs_difference": 0.00014838853739829183,
+          "mean_abs_difference": 2.211113060744029e-05,
+          "pearson_r": 0.9999982150582158,
+          "minimum_pearson_r": 0.98,
+          "rtol": 0.0,
+          "atol": 0.02
+        }
+      }
+    },
+    "4C": {
+      "pass": true,
+      "rows": 9,
+      "values": {
+        "mean": {
+          "pass": true,
+          "n": 9,
+          "max_abs_difference": 0.00021097093817434853,
+          "mean_abs_difference": 0.0001294220283306798,
+          "pearson_r": 0.9999999986596871,
+          "minimum_pearson_r": 0.9,
+          "rtol": 0.0,
+          "atol": 0.5
+        },
+        "median": {
+          "pass": true,
+          "n": 9,
+          "max_abs_difference": 0.004349094637546624,
+          "mean_abs_difference": 0.0019205420498548367,
+          "pearson_r": 0.9999995330258499,
+          "minimum_pearson_r": 0.9,
+          "rtol": 0.0,
+          "atol": 0.5
+        },
+        "fraction_up": {
+          "pass": true,
+          "n": 9,
+          "max_abs_difference": 0.0020576131687242705,
+          "mean_abs_difference": 0.0006849321499358253,
+          "pearson_r": 0.9999943870538814,
+          "minimum_pearson_r": 0.9,
+          "rtol": 0.0,
+          "atol": 0.5
+        },
+        "fraction_down": {
+          "pass": true,
+          "n": 9,
+          "max_abs_difference": 0.002057613168724326,
+          "mean_abs_difference": 0.0006849321499358315,
+          "pearson_r": 0.9999943870538812,
+          "minimum_pearson_r": 0.9,
+          "rtol": 0.0,
+          "atol": 0.5
+        }
+      }
+    }
+  }
+}

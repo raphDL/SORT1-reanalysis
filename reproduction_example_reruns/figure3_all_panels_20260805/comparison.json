@@ -1,0 +1,246 @@
+{
+  "created_utc": "2026-08-05T11:30:46.981079+00:00",
+  "comparison_code": {
+    "path": "reproduction/report.py",
+    "bytes": 31876,
+    "sha256": "1aac1febeb9fd558d1323a52e955b8999fabb195c461556948d38fa2f34ff9e3"
+  },
+  "reference_root": "<local-machine>/alphaGenome/_release/SORT1-reanalysis/outputs/source_data",
+  "note": "Reference outputs were accessed only by this post-run comparison stage.",
+  "pass": true,
+  "panels": {
+    "3A": {
+      "pass": true,
+      "generated_rows": 150,
+      "reference_rows": 150,
+      "common_window_overlap_fraction": 0.94,
+      "values": {
+        "delta_liver": {
+          "pass": true,
+          "n": 141,
+          "max_abs_difference": 0.0002904758974165006,
+          "mean_abs_difference": 5.228604814484566e-05,
+          "pearson_r": 0.9999178823812007,
+          "minimum_pearson_r": 0.995,
+          "rtol": 0.0,
+          "atol": 0.0005
+        },
+        "delta_adipose_mean": {
+          "pass": true,
+          "n": 141,
+          "max_abs_difference": 0.0002988668536207037,
+          "mean_abs_difference": 6.933749486585755e-05,
+          "pearson_r": 0.9998906703741176,
+          "minimum_pearson_r": 0.995,
+          "rtol": 0.0,
+          "atol": 0.0005
+        },
+        "contrast_liver_minus_adipose_mean": {
+          "pass": true,
+          "n": 141,
+          "max_abs_difference": 0.00027429974452250136,
+          "mean_abs_difference": 6.675226977310071e-05,
+          "pearson_r": 0.9999277258507366,
+          "minimum_pearson_r": 0.995,
+          "rtol": 0.0,
+          "atol": 0.0005
+        }
+      }
+    },
+    "3B": {
+      "pass": true,
+      "substitution_sequences_exact": true,
+      "matched_states": 1503,
+      "loss": {
+        "pass": true,
+        "n": 1503,
+        "max_abs_difference": 2.0299734115880597e-14,
+        "mean_abs_difference": 1.2619126295163949e-15,
+        "pearson_r": 1.0,
+        "minimum_pearson_r": 0.995,
+        "rtol": 0,
+        "atol": 0.0005
+      },
+      "position_summary": {
+        "max_loss": {
+          "pass": true,
+          "n": 501,
+          "max_abs_difference": 1.969951979319262e-14,
+          "mean_abs_difference": 1.360185910727151e-15,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": 0.995,
+          "rtol": 0,
+          "atol": 0.0005
+        },
+        "min_loss": {
+          "pass": true,
+          "n": 501,
+          "max_abs_difference": 1.579986141919676e-14,
+          "mean_abs_difference": 1.2841981378429107e-15,
+          "pearson_r": 0.9999999999999999,
+          "minimum_pearson_r": 0.995,
+          "rtol": 0,
+          "atol": 0.0005
+        },
+        "mean_loss": {
+          "pass": true,
+          "n": 501,
+          "max_abs_difference": 1.4399939574083476e-14,
+          "mean_abs_difference": 9.06503929329463e-16,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": 0.995,
+          "rtol": 0,
+          "atol": 0.0005
+        },
+        "positive_max_loss": {
+          "pass": true,
+          "n": 501,
+          "max_abs_difference": 1.969951979319262e-14,
+          "mean_abs_difference": 1.2401518607423979e-15,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": 0.995,
+          "rtol": 0,
+          "atol": 0.0005
+        }
+      }
+    },
+    "3C": {
+      "pass": true,
+      "hotspot_rows_exact": true,
+      "displayed_family_overlap_fraction": 0.875,
+      "shared_families": [
+        "C/EBP/bZIP",
+        "FOX/forkhead",
+        "KLF/SP",
+        "bHLH",
+        "homeobox",
+        "nuclear receptor",
+        "zinc finger"
+      ],
+      "generated_only_families": [
+        "HNF4/nuclear receptor"
+      ],
+      "reference_only_families": [
+        "NFI"
+      ],
+      "values": {
+        "pass": true,
+        "n": 49,
+        "max_abs_difference": 0.1349070593192867,
+        "mean_abs_difference": 0.013728383405649155,
+        "pearson_r": 0.990676154549302,
+        "minimum_pearson_r": 0.85,
+        "rtol": 0.0,
+        "atol": 1.0
+      }
+    },
+    "3E": {
+      "pass": true,
+      "rows": 112,
+      "mean_retention": {
+        "pass": true,
+        "n": 112,
+        "max_abs_difference": 2.3370194668359545e-14,
+        "mean_abs_difference": 4.12262067861689e-15,
+        "pearson_r": 1.0,
+        "minimum_pearson_r": 0.99,
+        "rtol": 0.0,
+        "atol": 0.005
+      },
+      "sem_retention": {
+        "pass": true,
+        "n": 28,
+        "max_abs_difference": 2.2065682614424986e-15,
+        "mean_abs_difference": 8.070955858006736e-16,
+        "pearson_r": 0.9999999999999999,
+        "minimum_pearson_r": 0.99,
+        "rtol": 0.0,
+        "atol": 0.005
+      }
+    },
+    "3F": {
+      "pass": true,
+      "rows": 2688,
+      "selected_window_matches": true,
+      "values": {
+        "outside_mean_retention": {
+          "pass": true,
+          "n": 2688,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": 0.99,
+          "rtol": 0.0,
+          "atol": 0.005
+        },
+        "outside_median_retention": {
+          "pass": true,
+          "n": 2688,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999999,
+          "minimum_pearson_r": 0.99,
+          "rtol": 0.0,
+          "atol": 0.005
+        },
+        "inside_mean_retention": {
+          "pass": true,
+          "n": 2688,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999999,
+          "minimum_pearson_r": 0.99,
+          "rtol": 0.0,
+          "atol": 0.005
+        },
+        "inside_median_retention": {
+          "pass": true,
+          "n": 2688,
+          "max_abs_difference": 0.0,
+          "mean_abs_difference": 0.0,
+          "pearson_r": 0.9999999999999998,
+          "minimum_pearson_r": 0.99,
+          "rtol": 0.0,
+          "atol": 0.005
+        }
+      }
+    },
+    "3G": {
+      "pass": true,
+      "rows": 12,
+      "n_seeds_exact": true,
+      "values": {
+        "mean_retention": {
+          "pass": true,
+          "n": 12,
+          "max_abs_difference": 1.099120794378905e-14,
+          "mean_abs_difference": 3.836340967122709e-15,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": 0.99,
+          "rtol": 0.0,
+          "atol": 0.005
+        },
+        "median_retention": {
+          "pass": true,
+          "n": 12,
+          "max_abs_difference": 1.5765166949677223e-14,
+          "mean_abs_difference": 6.510706325920286e-15,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": 0.99,
+          "rtol": 0.0,
+          "atol": 0.005
+        },
+        "sem_retention": {
+          "pass": true,
+          "n": 12,
+          "max_abs_difference": 2.3991225672759242e-15,
+          "mean_abs_difference": 1.0495077029659683e-15,
+          "pearson_r": 1.0,
+          "minimum_pearson_r": 0.99,
+          "rtol": 0.0,
+          "atol": 0.005
+        }
+      }
+    }
+  }
+}
