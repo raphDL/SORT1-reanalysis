@@ -48,6 +48,7 @@ from reproduction.figure4g import run_fig4g
 from reproduction.figure4h import run_fig4h
 from reproduction.figureS1 import run_figs1a, run_figs1b, run_figs1c, run_figs1d
 from reproduction.figureS2 import run_figs2a, run_figs2b, run_figs2c
+from reproduction.figureS3 import run_figs3
 from reproduction.report import compare_run, write_report
 
 
@@ -57,8 +58,10 @@ FIGURE3_PANELS = ["3A", "3B", "3C", "3E", "3F", "3G"]
 FIGURE4_PANELS = ["4B", "4C", "4E", "4F", "4G", "4H"]
 SUPP_S1_PANELS = ["S1A", "S1B", "S1C", "S1D"]
 SUPP_S2_PANELS = ["S2A", "S2B", "S2C"]
+SUPP_S3_PANELS = ["S3A", "S3B", "S3C", "S3D", "S3E", "S3F", "S3G"]
 SUPPORTED_PANELS = (
-    FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS + SUPP_S1_PANELS + SUPP_S2_PANELS
+    FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
+    + SUPP_S1_PANELS + SUPP_S2_PANELS + SUPP_S3_PANELS
 )
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -79,6 +82,7 @@ def default_run_dir(panels: list[str] | None = None) -> Path:
         else "figure2" if panels and set(panels).issubset(FIGURE2_PANELS)
         else "supp_s1" if panels and set(panels).issubset(SUPP_S1_PANELS)
         else "supp_s2" if panels and set(panels).issubset(SUPP_S2_PANELS)
+        else "supp_s3" if panels and set(panels).issubset(SUPP_S3_PANELS)
         else "reproduction"
     )
     stamp = datetime.now(timezone.utc).strftime(f"{figure}_%Y%m%dT%H%M%SZ")
@@ -246,6 +250,8 @@ def run(args: argparse.Namespace) -> int:
             run_figs2b(args.run_dir, audit)
         if "S2C" in args.panels:
             run_figs2c(args.run_dir, audit)
+        if set(args.panels) & set(SUPP_S3_PANELS):
+            run_figs3(args.run_dir, audit, currin_variants_file=args.currin_variants, currin_peakset_file=args.currin_peakset)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)
@@ -365,6 +371,12 @@ def main() -> None:
             help="Optional Phase 3 1000 Genomes sample panel file.")
     run_parser.add_argument("--hic-file", type=Path, default=None,
         help="Optional local 4DNFICSTCJQZ.hic; default uses remote HTTP byte-range access.")
+    run_parser.add_argument("--currin-variants", type=Path, default=None,
+        help="Required for Figure S3: local Currin et al. 2025 SORT1-locus caQTL "
+             "association table (Zenodo 15025748 / GEO GSE264684; checksum-verified).")
+    run_parser.add_argument("--currin-peakset", type=Path, default=None,
+        help="Required for Figure S3: local Currin et al. 2025 28-peak coordinated-set "
+             "definition for the SORT1 locus (checksum-verified).")
     compare_parser = subparsers.add_parser("compare", help="Compare a completed run to frozen references")
     compare_parser.add_argument("--run-dir", type=Path, required=True)
     compare_parser.add_argument("--panels", type=parse_panels, default=None)

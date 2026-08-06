@@ -65,6 +65,7 @@ the release; only the plotting script is pending):
 |---|---|---|
 | S1A–D | `panel_contact/run_observed_hic_validation.py`, `build_figure1_supplementary_panels.py`, `panel_contact/run_contact_architecture_analysis.py` | Ported to `reproduction/figureS1.py::run_figs1a`–`run_figs1d` as part of the clean-room analysis runner instead. |
 | S2A–C | `build_figure1_supplementary_panels.py` | Ported to `reproduction/figureS2.py::run_figs2a`–`run_figs2c` as part of the clean-room analysis runner instead. See "Known temporal drift" below for a caveat specific to S2C. |
+| S3A–G | `panel_caQTL/run_currin_score_249_ag.py`, `panel_caQTL/run_currin_caqtl_atac_analysis.py`, `build_figure_s2.py` | Ported to `reproduction/figureS3.py::run_figs3` as part of the clean-room analysis runner instead. Needs `--currin-variants`/`--currin-peakset` (see "External data requiring manual supply" below). |
 | 3A | `panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on the two Zenodo-pending Fig3A tables above plus a GENCODE feather cache. |
 | 3B | `panel_B_base_substitution_501bp/run_native_locus_501bp_ism.py` | Combined analysis+plot script. |
 | 3C | `panel_C_motif_family_disruption/make_panel_C.py` | Needs a live genome FASTA + JASPAR scan, not a pure replot. Ported to `reproduction/figure3.py::run_fig3c` as part of the clean-room analysis runner instead. |
@@ -72,6 +73,23 @@ the release; only the plotting script is pending):
 Panels not listed above (including all of Figure 4's computational
 panels) retain canonical SVGs, compact source tables, checksums, and
 legacy-script pointers in `MANIFEST.tsv`.
+
+## External data requiring manual supply
+
+Two inputs have no traceable derivation script from their public release to
+the small local excerpt actually used, so `reproduce.py` cannot fetch them
+automatically; they must be supplied via a CLI flag and are only checksum-
+validated, never committed to this repository (`data/README.md`: "No public
+dataset should be committed merely for convenience"):
+
+- **Fig2B** (`--wang-xls`): the original Wang et al. 2018 supplementary
+  spreadsheet (`atv310103_ds.xls`); the publisher download is bot-gated.
+- **FigS3** (`--currin-variants`, `--currin-peakset`): a SORT1-locus excerpt
+  of the Currin et al. 2025 liver caQTL summary statistics and its 28-peak
+  "coordinated set 539" definition (Zenodo record 15025748 / GEO GSE264684;
+  accession and checksums in `data/SOURCES.tsv`). The full Zenodo release is
+  genome-wide; reducing it to this locus and peak set was done once, by
+  hand, outside this codebase.
 
 ## Known temporal drift in the AlphaGenome backend (observed 2026-08-06)
 

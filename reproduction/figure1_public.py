@@ -39,12 +39,15 @@ def _supplied(source: Path, destination: Path, expected: str | None, audit: Audi
     return destination
 
 
-def prepare_figure1_public_inputs(run_dir: Path, audit: Audit, *, gtex_file: Path | None, vcf_file: Path | None, panel_file: Path | None) -> dict[str, Path]:
+def prepare_figure1_public_inputs(run_dir: Path, audit: Audit, *, gtex_file: Path | None, vcf_file: Path | None, panel_file: Path | None, skip_gtex: bool = False) -> dict[str, Path]:
     raw = run_dir / "raw"
-    gtex = _supplied(gtex_file, raw / "Liver.allpairs.txt.gz", GTEX_SHA256, audit) if gtex_file else Path(download(GTEX_URL, raw / "Liver.allpairs.txt.gz")["path"])
-    if not gtex_file:
-        if sha256_file(gtex) != GTEX_SHA256: raise ValueError("GTEx checksum mismatch")
-        audit.downloads.append({"url": GTEX_URL, "path": str(gtex), "bytes": gtex.stat().st_size, "sha256": GTEX_SHA256, "reused": False}); audit.save()
+    result: dict[str, Path] = {}
+    if not skip_gtex:
+        gtex = _supplied(gtex_file, raw / "Liver.allpairs.txt.gz", GTEX_SHA256, audit) if gtex_file else Path(download(GTEX_URL, raw / "Liver.allpairs.txt.gz")["path"])
+        if not gtex_file:
+            if sha256_file(gtex) != GTEX_SHA256: raise ValueError("GTEx checksum mismatch")
+            audit.downloads.append({"url": GTEX_URL, "path": str(gtex), "bytes": gtex.stat().st_size, "sha256": GTEX_SHA256, "reused": False}); audit.save()
+        result["gtex"] = gtex
     panel = _supplied(panel_file, raw / "integrated_call_samples_v3.20130502.ALL.panel", PANEL_SHA256, audit) if panel_file else Path(download(PANEL_URL, raw / "integrated_call_samples_v3.20130502.ALL.panel")["path"])
     if not panel_file:
         if sha256_file(panel) != PANEL_SHA256: raise ValueError("1000 Genomes panel checksum mismatch")
@@ -58,7 +61,9 @@ def prepare_figure1_public_inputs(run_dir: Path, audit: Audit, *, gtex_file: Pat
         subprocess.run(["bcftools", "view", "-r", "chr1:109209432-109340504", "-Oz", "-o", str(vcf), VCF_URL], check=True)
         subprocess.run(["bcftools", "index", "-t", str(vcf)], check=True)
         audit.downloads.append({"url": VCF_URL + "#chr1:109209432-109340504", "path": str(vcf), "bytes": vcf.stat().st_size, "sha256": sha256_file(vcf), "reused": False}); audit.save()
-    return {"gtex": gtex, "vcf": vcf, "panel": panel}
+    result["vcf"] = vcf
+    result["panel"] = panel
+    return result
 
 
 def _orient(row: pd.Series, value: float, ref: str, alt: str) -> float:
@@ -67,6 +72,41 @@ def _orient(row: pd.Series, value: float, ref: str, alt: str) -> float:
     if alt == row.ldl_lowering_allele: return value
     if ref == row.ldl_lowering_allele: return -value
     raise ValueError(f"GTEx alleles do not match GLGC alleles for {row.rsid}")
+
+
+def compute_tagging_covariate(inputs: dict[str, Path], base: pd.DataFrame) -> pd.DataFrame:
+    """The rs12740374 EUR LD-tagging covariate (`tagging_covvar_EUR`,
+    `tagging_ptag_EUR`), computed from the 1000 Genomes VCF/panel for any
+    variant table with `pos`, `ldl_lowering_allele`, `ldl_raising_allele`
+    columns -- independent of gene/phenotype, so it is also reused by
+    Figure S3's caQTL tagging model (a different variant subset, same
+    formula). Split out of attach_eqtl_and_tagging so callers that don't
+    need the GTEx eQTL merge (e.g. Figure S3) can skip that large download."""
+    base = base.copy()
+    panel=pd.read_csv(inputs["panel"],sep="\t"); eur=set(panel.loc[panel.super_pop.eq("EUR"),"sample"].astype(str))
+    query=["bcftools","query","-f","%POS\t%ID\t%REF\t%ALT[\t%SAMPLE=%GT]\n",str(inputs["vcf"])]
+    records: dict[int, list[list[str]]] = {}
+    for line in subprocess.run(query,check=True,text=True,capture_output=True).stdout.splitlines():
+        f=line.split("\t"); records.setdefault(int(f[0]), []).append(f)
+    tag=records[VARIANT_POS][0]; sample_gt=lambda f:{x.split("=",1)[0]:x.split("=",1)[1] for x in f[4:]}
+    taggt=sample_gt(tag); tag_alt=str(tag[3]).split(",").index("T")+1
+    cov=[]; ptag=[]; status=[]
+    for _,row in base.iterrows():
+        candidates=records.get(int(row.pos), [])
+        f=next((x for x in candidates if {row.ldl_lowering_allele,row.ldl_raising_allele} == set([x[2],*x[3].split(",")])),None)
+        if f is None: cov.append(np.nan); ptag.append(np.nan); status.append("missing_from_vcf"); continue
+        alleles=[f[2],*f[3].split(",")]
+        try: low=alleles.index(row.ldl_lowering_allele)
+        except ValueError: cov.append(np.nan); ptag.append(np.nan); status.append("allele_mismatch"); continue
+        vg=sample_gt(f); n=lo=ta=both=0
+        for s in eur & vg.keys() & taggt.keys():
+            a=vg[s].replace("/","|").split("|"); b=taggt[s].replace("/","|").split("|")
+            if len(a)!=2 or len(b)!=2 or "." in a+b: continue
+            for x,y in zip(a,b): n+=1; lo+=int(int(x)==low); ta+=int(int(y)==tag_alt); both+=int(int(x)==low and int(y)==tag_alt)
+        ps,pt,pb=lo/n,ta/n,both/n
+        cov.append((pb-ps*pt)/(ps*(1-ps)) if 0<ps<1 else np.nan); ptag.append(pb/ps if ps else np.nan); status.append("matched")
+    base["tagging_ptag_EUR"],base["tagging_covvar_EUR"],base["tagging_match_status"]=ptag,cov,status
+    return base
 
 
 def attach_eqtl_and_tagging(run_dir: Path, inputs: dict[str, Path], base: pd.DataFrame) -> pd.DataFrame:
@@ -103,29 +143,7 @@ def attach_eqtl_and_tagging(run_dir: Path, inputs: dict[str, Path], base: pd.Dat
             else:
                 vals.append((np.nan,np.nan,np.nan))
         base[f"eqtl_liver_{gene}"],base[f"eqtl_liver_{gene}_se"],base[f"eqtl_liver_{gene}_p"]=zip(*vals)
-    panel=pd.read_csv(inputs["panel"],sep="\t"); eur=set(panel.loc[panel.super_pop.eq("EUR"),"sample"].astype(str))
-    query=["bcftools","query","-f","%POS\t%ID\t%REF\t%ALT[\t%SAMPLE=%GT]\n",str(inputs["vcf"])]
-    records: dict[int, list[list[str]]] = {}
-    for line in subprocess.run(query,check=True,text=True,capture_output=True).stdout.splitlines():
-        f=line.split("\t"); records.setdefault(int(f[0]), []).append(f)
-    tag=records[VARIANT_POS][0]; sample_gt=lambda f:{x.split("=",1)[0]:x.split("=",1)[1] for x in f[4:]}
-    taggt=sample_gt(tag); tag_alt=str(tag[3]).split(",").index("T")+1
-    cov=[]; ptag=[]; status=[]
-    for _,row in base.iterrows():
-        candidates=records.get(int(row.pos), [])
-        f=next((x for x in candidates if {row.ldl_lowering_allele,row.ldl_raising_allele} == set([x[2],*x[3].split(",")])),None)
-        if f is None: cov.append(np.nan); ptag.append(np.nan); status.append("missing_from_vcf"); continue
-        alleles=[f[2],*f[3].split(",")]
-        try: low=alleles.index(row.ldl_lowering_allele)
-        except ValueError: cov.append(np.nan); ptag.append(np.nan); status.append("allele_mismatch"); continue
-        vg=sample_gt(f); n=lo=ta=both=0
-        for s in eur & vg.keys() & taggt.keys():
-            a=vg[s].replace("/","|").split("|"); b=taggt[s].replace("/","|").split("|")
-            if len(a)!=2 or len(b)!=2 or "." in a+b: continue
-            for x,y in zip(a,b): n+=1; lo+=int(int(x)==low); ta+=int(int(y)==tag_alt); both+=int(int(x)==low and int(y)==tag_alt)
-        ps,pt,pb=lo/n,ta/n,both/n
-        cov.append((pb-ps*pt)/(ps*(1-ps)) if 0<ps<1 else np.nan); ptag.append(pb/ps if ps else np.nan); status.append("matched")
-    base["tagging_ptag_EUR"],base["tagging_covvar_EUR"],base["tagging_match_status"]=ptag,cov,status
+    base = compute_tagging_covariate(inputs, base)
     causal=base.loc[base.rsid.eq(VARIANT_RSID)].iloc[0]
     for gene in GENES:
         direct=base[f"ag_rna_liver_{gene}"]; model=direct+base.tagging_covvar_EUR*float(causal[f"ag_rna_liver_{gene}"])

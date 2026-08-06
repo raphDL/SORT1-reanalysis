@@ -745,6 +745,96 @@ def compare_figs2c(run_dir: Path) -> dict[str, object]:
     }
 
 
+def _load_figs3(run_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame] | None:
+    generated_values = run_dir / "derived/FigureS3_displayed_values.tsv"
+    generated_corr = run_dir / "derived/FigureS3_correlations.tsv"
+    if not generated_values.exists() or not generated_corr.exists():
+        return None
+    reference_values = REFERENCE_ROOT / "FigureS3_caqtl_locus/figureS2_displayed_values.tsv"
+    reference_corr = REFERENCE_ROOT / "FigureS3_caqtl_locus/figureS2_correlations.tsv"
+    return (
+        pd.read_csv(generated_values, sep="\t"), pd.read_csv(reference_values, sep="\t"),
+        pd.read_csv(generated_corr, sep="\t"), pd.read_csv(reference_corr, sep="\t"),
+    )
+
+
+def _compare_figs3_column(run_dir: Path, column: str, *, rtol: float, atol: float, min_pearson: float | None) -> dict[str, object]:
+    loaded = _load_figs3(run_dir)
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want, _, _ = loaded
+    got_d = got[got.peak_group.eq("driver_peak15120")][["rsid", column]]
+    want_d = want[want.peak_group.eq("driver_peak15120")][["rsid", column]]
+    joined = got_d.merge(want_d, on="rsid", suffixes=("_generated", "_reference"), validate="one_to_one")
+    result = _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=rtol, atol=atol, min_pearson=min_pearson)
+    return {"pass": len(joined) == len(want_d) and result["pass"], "rows": len(joined), "values": {column: result}}
+
+
+def compare_figs3a(run_dir: Path) -> dict[str, object]:
+    """S3A is the observed Currin caQTL beta -- static data, no AlphaGenome
+    call, so an exact-match tolerance is meaningful."""
+    return _compare_figs3_column(run_dir, "caqtl_beta_ag_alt_minus_ref", rtol=1e-4, atol=1e-5, min_pearson=None)
+
+
+def compare_figs3b(run_dir: Path) -> dict[str, object]:
+    """S3B is a fresh 80-variant ALL_FOLDS ATAC scan -- the same live-model-
+    drift regime documented for S2B, but empirically tighter for this
+    scorer in a real smoke test (~0.00016 on rs12740374's ATAC score)."""
+    return _compare_figs3_column(run_dir, "all_folds_atac_direct", rtol=0.0, atol=0.02, min_pearson=0.95)
+
+
+def compare_figs3c(run_dir: Path) -> dict[str, object]:
+    """S3C is derived from S3B + the already-verified tagging_covvar_EUR --
+    same tolerance as S3B since the arithmetic just linearly propagates it."""
+    return _compare_figs3_column(run_dir, "all_folds_atac_tagging", rtol=0.0, atol=0.02, min_pearson=0.95)
+
+
+def compare_figs3d(run_dir: Path) -> dict[str, object]:
+    """S3D is the ALL_FOLDS tagging-model-vs-observed-caQTL correlation
+    (driver_peak15120 row of the correlations table); a loose tolerance
+    since it is a Pearson/Spearman value over only 80 points."""
+    loaded = _load_figs3(run_dir)
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    _, _, got_corr, want_corr = loaded
+    got = got_corr[got_corr.peak_group.eq("driver_peak15120") & got_corr.regime.eq("ALL_FOLDS") & got_corr.model.eq("tagging")].iloc[0]
+    want = want_corr[want_corr.peak_group.eq("driver_peak15120") & want_corr.regime.eq("ALL_FOLDS") & want_corr.model.eq("tagging")].iloc[0]
+    pearson_diff = abs(float(got.pearson_r) - float(want.pearson_r))
+    spearman_diff = abs(float(got.spearman_rho) - float(want.spearman_rho))
+    return {
+        "pass": pearson_diff <= 0.15 and spearman_diff <= 0.15,
+        "generated": {"pearson_r": float(got.pearson_r), "spearman_rho": float(got.spearman_rho)},
+        "reference": {"pearson_r": float(want.pearson_r), "spearman_rho": float(want.spearman_rho)},
+    }
+
+
+def compare_figs3e(run_dir: Path) -> dict[str, object]:
+    """S3E is a fresh 80-variant FOLD_0 ATAC scan; same tolerance rationale as S3B."""
+    return _compare_figs3_column(run_dir, "fold0_atac_direct", rtol=0.0, atol=0.02, min_pearson=0.95)
+
+
+def compare_figs3f(run_dir: Path) -> dict[str, object]:
+    """S3F is derived from S3E + tagging_covvar_EUR; same tolerance as S3E."""
+    return _compare_figs3_column(run_dir, "fold0_atac_tagging", rtol=0.0, atol=0.02, min_pearson=0.95)
+
+
+def compare_figs3g(run_dir: Path) -> dict[str, object]:
+    """S3G is the FOLD_0 tagging-model-vs-observed-caQTL correlation."""
+    loaded = _load_figs3(run_dir)
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    _, _, got_corr, want_corr = loaded
+    got = got_corr[got_corr.peak_group.eq("driver_peak15120") & got_corr.regime.eq("FOLD_0") & got_corr.model.eq("tagging")].iloc[0]
+    want = want_corr[want_corr.peak_group.eq("driver_peak15120") & want_corr.regime.eq("FOLD_0") & want_corr.model.eq("tagging")].iloc[0]
+    pearson_diff = abs(float(got.pearson_r) - float(want.pearson_r))
+    spearman_diff = abs(float(got.spearman_rho) - float(want.spearman_rho))
+    return {
+        "pass": pearson_diff <= 0.15 and spearman_diff <= 0.15,
+        "generated": {"pearson_r": float(got.pearson_r), "spearman_rho": float(got.spearman_rho)},
+        "reference": {"pearson_r": float(want.pearson_r), "spearman_rho": float(want.spearman_rho)},
+    }
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -754,6 +844,8 @@ COMPARATORS = {
     "4E": compare_fig4e, "4F": compare_fig4f, "4G": compare_fig4g, "4H": compare_fig4h,
     "S1A": compare_figs1a, "S1B": compare_figs1b, "S1C": compare_figs1c, "S1D": compare_figs1d,
     "S2A": compare_figs2a, "S2B": compare_figs2b, "S2C": compare_figs2c,
+    "S3A": compare_figs3a, "S3B": compare_figs3b, "S3C": compare_figs3c, "S3D": compare_figs3d,
+    "S3E": compare_figs3e, "S3F": compare_figs3f, "S3G": compare_figs3g,
 }
 
 
@@ -892,6 +984,13 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "S2A": ("GTEx v7 + 1000G Phase3 EUR (reuses Figure 1C's own ALL_FOLDS scan)", "ALL_FOLDS"),
         "S2B": ("GTEx v7 + 1000G Phase3 EUR + AlphaGenome API (111-variant scan, held-out fold)", "FOLD_0"),
         "S2C": ("Reuses S2A/S2B's already-scored tables (no new AlphaGenome calls)", "ALL_FOLDS;FOLD_0"),
+        "S3A": ("Currin et al. 2025 caQTL summary statistics (no AlphaGenome)", "none"),
+        "S3B": ("Currin caQTL variant subset + AlphaGenome API (80-variant ATAC scan)", "ALL_FOLDS"),
+        "S3C": ("Reuses S3B + Figure 1C's tagging covariate (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S3D": ("Reuses S3A/S3C (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S3E": ("Currin caQTL variant subset + AlphaGenome API (80-variant ATAC scan, held-out fold)", "FOLD_0"),
+        "S3F": ("Reuses S3E + Figure 1C's tagging covariate (no new AlphaGenome calls)", "FOLD_0"),
+        "S3G": ("Reuses S3A/S3F (no new AlphaGenome calls)", "FOLD_0"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)
