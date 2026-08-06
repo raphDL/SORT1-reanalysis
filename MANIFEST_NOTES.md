@@ -64,7 +64,7 @@ the release; only the plotting script is pending):
 | Panel | Legacy script | Note |
 |---|---|---|
 | S1A–D | `panel_contact/run_observed_hic_validation.py`, `build_figure1_supplementary_panels.py`, `panel_contact/run_contact_architecture_analysis.py` | Ported to `reproduction/figureS1.py::run_figs1a`–`run_figs1d` as part of the clean-room analysis runner instead. |
-| S2A–C | `build_figure1_supplementary_panels.py` | Shared multi-panel builder. |
+| S2A–C | `build_figure1_supplementary_panels.py` | Ported to `reproduction/figureS2.py::run_figs2a`–`run_figs2c` as part of the clean-room analysis runner instead. See "Known temporal drift" below for a caveat specific to S2C. |
 | 3A | `panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on the two Zenodo-pending Fig3A tables above plus a GENCODE feather cache. |
 | 3B | `panel_B_base_substitution_501bp/run_native_locus_501bp_ism.py` | Combined analysis+plot script. |
 | 3C | `panel_C_motif_family_disruption/make_panel_C.py` | Needs a live genome FASTA + JASPAR scan, not a pure replot. Ported to `reproduction/figure3.py::run_fig3c` as part of the clean-room analysis runner instead. |
@@ -72,3 +72,53 @@ the release; only the plotting script is pending):
 Panels not listed above (including all of Figure 4's computational
 panels) retain canonical SVGs, compact source tables, checksums, and
 legacy-script pointers in `MANIFEST.tsv`.
+
+## Known temporal drift in the AlphaGenome backend (observed 2026-08-06)
+
+The AlphaGenome API is a live service; its deployed model is not
+guaranteed to return byte-identical predictions across calendar time, even
+for a fixed model version (`ALL_FOLDS`/`FOLD_0`) and a fixed input. This
+was directly observed while reproducing Figure 1C/S2's 111-variant
+liver exon-mask RNA scan:
+
+- A clean-room run from 2026-08-02 matched the frozen `outputs/source_data/`
+  reference to ~1e-12 (floating-point noise) for every one of the 999
+  variant x gene x track predictions underlying Figure 1C.
+- An otherwise-identical clean-room run from 2026-08-06 (4 days later)
+  diverged from that same reference by up to 0.044 at the individual-track
+  level and up to ~0.006 in the gene-level aggregate (Pearson r 0.98–0.999).
+  The same 111 liver tracks were returned in both runs, so this is
+  per-prediction numerical drift, not a track-set change.
+- Two independent fresh FOLD_0 scans taken ~2h apart on 2026-08-06 were
+  bit-identical (max abs diff 0.0 across all 111 variants x 3 genes),
+  confirming the 2026-08-06 predictions are themselves stable/deterministic
+  -- the divergence is a real shift in the deployed backend between
+  2026-08-02 and 2026-08-06, not request-to-request sampling noise.
+
+**Consequence for S2C specifically:** the manuscript states "rs12740374
+remained the variant with the largest absolute predicted RNA effect for
+SORT1, CELSR2, and PSRC1" under held-out FOLD_0. This holds for CELSR2 and
+PSRC1 in both the 2026-08-02 and 2026-08-06 runs. For SORT1, it held on
+2026-08-02 but not on 2026-08-06 (rs12740374 ranks 2nd, ~15% below the top
+variant, rs464218). This is expected to be fragile rather than a pipeline
+defect: FOLD_0 excludes the SORT1 locus from training, and SORT1-specific
+FOLD_0 predictions are independently documented in the manuscript (Fig. S5)
+as sitting near the noise floor for this locus (RNA correlation "fell from
+0.79 to -0.16"), so among 111 mostly-small, closely-spaced FOLD_0 scores,
+rs12740374's lead over the runner-up was already narrow. `reproduction/
+report.py::compare_figs2c` reports the exact per-gene rank for both the
+archive and the fresh run rather than silently forcing a pass; it gates
+`pass` on the more robust claim (top-3, not exact rank-1) plus a loose
+correlation tolerance.
+
+**Figure 1C itself** (main text, `ALL_FOLDS`) was not re-verified against
+its original tight comparator tolerance (`reproduction/report.py::
+compare_fig1c`, `rtol=1e-4, atol=1e-5`) under the 2026-08-06 backend state;
+given the drift above, a fresh run today would likely not pass that
+tolerance either, though the qualitative result (rs12740374 as the
+dominant-effect variant) is unaffected at this magnitude of drift. This repo
+does not currently loosen that comparator -- it is a main-text panel and
+changing its pass/fail bar is a manuscript-level decision, not a
+pipeline-maintenance one. A dedicated, deliberate full-repo freshness pass
+(all figures, not just this one) closer to submission would give a
+complete current-day picture.

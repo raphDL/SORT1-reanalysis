@@ -23,7 +23,7 @@ cp .env.example .env   # add your AlphaGenome API key
 python reproduce.py doctor
 
 python reproduce.py run \
-  --panels 1B,1C,1D,1E,1F,2B,2C,2E,2F,3A,3B,3C,3E,3F,3G,4B,4C,4E,4F,4G,S1A,S1B,S1C,S1D \
+  --panels 1B,1C,1D,1E,1F,2B,2C,2E,2F,3A,3B,3C,3E,3F,3G,4B,4C,4E,4F,4G,S1A,S1B,S1C,S1D,S2A,S2B,S2C \
   --run-dir /path/to/run
 python reproduce.py compare --run-dir /path/to/run
 ```
@@ -32,7 +32,7 @@ Figures 4H and 4J are large exhaustive AlphaGenome screens (~900K and
 ~1.6M predictions); 4H is ported (`--panels 4H`) but its full run wasn't
 completed, and 4J is scoped but not yet ported. Figures 1A/2A/2D/3D/4A/4D/4I
 are author-layout schematics, out of scope for the runner. Supplementary
-figures beyond S1 are not yet ported.
+figures beyond S1/S2 are not yet ported.
 
 ## Regenerating figures from existing predictions (fast)
 

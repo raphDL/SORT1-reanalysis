@@ -47,6 +47,7 @@ from reproduction.figure4ef import run_fig4ef
 from reproduction.figure4g import run_fig4g
 from reproduction.figure4h import run_fig4h
 from reproduction.figureS1 import run_figs1a, run_figs1b, run_figs1c, run_figs1d
+from reproduction.figureS2 import run_figs2a, run_figs2b, run_figs2c
 from reproduction.report import compare_run, write_report
 
 
@@ -55,7 +56,10 @@ FIGURE2_PANELS = ["2B", "2C", "2E", "2F"]
 FIGURE3_PANELS = ["3A", "3B", "3C", "3E", "3F", "3G"]
 FIGURE4_PANELS = ["4B", "4C", "4E", "4F", "4G", "4H"]
 SUPP_S1_PANELS = ["S1A", "S1B", "S1C", "S1D"]
-SUPPORTED_PANELS = FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS + SUPP_S1_PANELS
+SUPP_S2_PANELS = ["S2A", "S2B", "S2C"]
+SUPPORTED_PANELS = (
+    FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS + SUPP_S1_PANELS + SUPP_S2_PANELS
+)
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
 
@@ -74,6 +78,7 @@ def default_run_dir(panels: list[str] | None = None) -> Path:
         else "figure3" if panels and set(panels).issubset(FIGURE3_PANELS)
         else "figure2" if panels and set(panels).issubset(FIGURE2_PANELS)
         else "supp_s1" if panels and set(panels).issubset(SUPP_S1_PANELS)
+        else "supp_s2" if panels and set(panels).issubset(SUPP_S2_PANELS)
         else "reproduction"
     )
     stamp = datetime.now(timezone.utc).strftime(f"{figure}_%Y%m%dT%H%M%SZ")
@@ -235,6 +240,12 @@ def run(args: argparse.Namespace) -> int:
             run_figs1c(args.run_dir, audit)
         if "S1D" in args.panels:
             run_figs1d(args.run_dir, audit)
+        if "S2A" in args.panels:
+            run_figs2a(args.run_dir, audit)
+        if "S2B" in args.panels:
+            run_figs2b(args.run_dir, audit)
+        if "S2C" in args.panels:
+            run_figs2c(args.run_dir, audit)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)

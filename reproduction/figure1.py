@@ -372,18 +372,26 @@ def _extract_liver_scores(adata: Any, rsid: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def run_fig1c_middle(
+def score_gene_mask_variants(
     run_dir: Path,
     audit: Audit,
     *,
+    model_version: Any,
+    panel: str,
+    raw_filename: str,
     batch_size: int,
     max_workers: int,
     max_variants: int | None,
-) -> None:
-    with audit.step("1C-middle: download GLGC, LiftOver chain, and hg38"):
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The 111-variant, liver-restricted, exon-mask RNA_SEQ scan shared by
+    Figure 1C (ALL_FOLDS) and Figure S2B (held-out FOLD_0). Everything here
+    is model-version-agnostic except the AlphaGenome client itself and the
+    on-disk cache path, both of which are parameterized so the two regimes
+    never share a checkpoint file."""
+    with audit.step(f"{panel}: download GLGC, LiftOver chain, and hg38"):
         inputs = fetch_fig1c_inputs(run_dir, audit)
     variant_path = run_dir / "derived" / "Figure1C_reconstructed_variants.tsv"
-    with audit.step("1C-middle: reconstruct the 111-variant set"):
+    with audit.step(f"{panel}: reconstruct the 111-variant set"):
         variants_table = build_fig1c_variant_table(inputs["glgc"], inputs["chain"], variant_path)
     if max_variants is not None:
         causal = variants_table[variants_table["rsid"].eq(VARIANT_RSID)]
@@ -392,8 +400,8 @@ def run_fig1c_middle(
         variants_table = variants_table.sort_values("pos").reset_index(drop=True)
     variants, alleles = _build_ag_variants(variants_table, inputs["fasta"])
     genome, _, dna_client, model_modules = _ag()
-    dna_model, variant_scorers = model_modules
-    raw_path = run_dir / "predictions" / "Figure1C_middle_raw_track_scores.tsv"
+    _, variant_scorers = model_modules
+    raw_path = run_dir / "predictions" / raw_filename
     cached = pd.read_csv(raw_path, sep="\t") if raw_path.exists() else pd.DataFrame()
     complete = set()
     if not cached.empty:
@@ -405,13 +413,13 @@ def run_fig1c_middle(
         }
     variant_by_id = {str(item.name): item for item in variants}
     wanted = [str(value) for value in variants_table["rsid"] if str(value) not in complete]
-    client = dna_client.create(api_key(), model_version=dna_model.ModelVersion.ALL_FOLDS, timeout=300)
+    client = dna_client.create(api_key(), model_version=model_version, timeout=300)
     interval = genome.Interval("chr1", VARIANT_POS, VARIANT_POS).resize(1_048_576)
     scorer = variant_scorers.RECOMMENDED_VARIANT_SCORERS["RNA_SEQ"]
     parts = [] if cached.empty else [cached]
     for start in range(0, len(wanted), batch_size):
         batch_ids = wanted[start : start + batch_size]
-        with audit.step(f"1C-middle: score variants {start + 1}-{start + len(batch_ids)}"):
+        with audit.step(f"{panel}: score variants {start + 1}-{start + len(batch_ids)}"):
             outputs = None
             last_error: Exception | None = None
             for attempt in range(1, 4):
@@ -430,8 +438,8 @@ def run_fig1c_middle(
                         time.sleep(2 * attempt)
             if outputs is None:
                 raise RuntimeError(f"AlphaGenome scoring batch failed after 3 attempts: {last_error}")
-            audit.add_api_calls("1C-middle", len(batch_ids))
-            audit.add_api_requests("1C-middle", 1)
+            audit.add_api_calls(panel, len(batch_ids))
+            audit.add_api_requests(panel, 1)
             new_parts = []
             for rsid, output_list in zip(batch_ids, outputs, strict=True):
                 if not output_list:
@@ -467,6 +475,29 @@ def run_fig1c_middle(
     wide = aggregate.pivot(index=["rsid", "pos"], columns="gene", values="gene_mask_lnfc").reset_index()
     wide = wide.rename(columns={gene: f"ag_rna_liver_{gene}" for gene in GENES})
     result = variants_table.merge(wide, on=["rsid", "pos"], how="left", validate="one_to_one")
+    return result, oriented
+
+
+def run_fig1c_middle(
+    run_dir: Path,
+    audit: Audit,
+    *,
+    batch_size: int,
+    max_workers: int,
+    max_variants: int | None,
+) -> None:
+    genome, _, dna_client, model_modules = _ag()
+    dna_model, _ = model_modules
+    result, oriented = score_gene_mask_variants(
+        run_dir,
+        audit,
+        model_version=dna_model.ModelVersion.ALL_FOLDS,
+        panel="1C-middle",
+        raw_filename="Figure1C_middle_raw_track_scores.tsv",
+        batch_size=batch_size,
+        max_workers=max_workers,
+        max_variants=max_variants,
+    )
     result_path = run_dir / "derived" / "Figure1C_middle_ag_scores.tsv"
     result.to_csv(result_path, sep="\t", index=False, float_format="%.10g")
     oriented.to_csv(

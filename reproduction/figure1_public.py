@@ -69,8 +69,13 @@ def _orient(row: pd.Series, value: float, ref: str, alt: str) -> float:
     raise ValueError(f"GTEx alleles do not match GLGC alleles for {row.rsid}")
 
 
-def build_full_figure1c(run_dir: Path, inputs: dict[str, Path]) -> None:
-    base = pd.read_csv(run_dir / "derived/Figure1C_middle_ag_scores.tsv", sep="\t")
+def attach_eqtl_and_tagging(run_dir: Path, inputs: dict[str, Path], base: pd.DataFrame) -> pd.DataFrame:
+    """Merge GTEx liver eQTL effects and the rs12740374 LD-tagging covariate
+    onto an AlphaGenome gene-mask score table (any model regime). Shared by
+    Figure 1C (ALL_FOLDS) and Figure S2B (FOLD_0) -- everything below this
+    point depends only on the variant table and the external GTEx/1000G
+    inputs, not on which model produced `ag_rna_liver_{gene}`."""
+    base = base.copy()
     wanted_pos = set(base.pos_hg19.astype(int)); by_gene: dict[str, dict[int, list[tuple[float,float,float,str,str]]]] = {g:{} for g in GENES}
     id_gene = {v:k for k,v in GENE_IDS.items()}
     with gzip.open(inputs["gtex"], "rt") as handle:
@@ -126,7 +131,13 @@ def build_full_figure1c(run_dir: Path, inputs: dict[str, Path]) -> None:
         direct=base[f"ag_rna_liver_{gene}"]; model=direct+base.tagging_covvar_EUR*float(causal[f"ag_rna_liver_{gene}"])
         model.loc[base.rsid.eq(VARIANT_RSID)]=float(causal[f"ag_rna_liver_{gene}"])
         base[f"ag_model_snp_plus_covvar_rs127_for_plot_{gene}"]=model.fillna(direct)
-    out=run_dir/"derived/Figure1C_eqtl_direct_tagging.tsv"; base.to_csv(out,sep="\t",index=False,float_format="%.10g"); render_figure1c(out,run_dir/"figures/Figure1C.svg")
+    return base
+
+
+def build_full_figure1c(run_dir: Path, inputs: dict[str, Path]) -> None:
+    base = pd.read_csv(run_dir / "derived/Figure1C_middle_ag_scores.tsv", sep="\t")
+    result = attach_eqtl_and_tagging(run_dir, inputs, base)
+    out=run_dir/"derived/Figure1C_eqtl_direct_tagging.tsv"; result.to_csv(out,sep="\t",index=False,float_format="%.10g"); render_figure1c(out,run_dir/"figures/Figure1C.svg")
 
 
 def render_figure1c(source: Path, output: Path) -> None:
