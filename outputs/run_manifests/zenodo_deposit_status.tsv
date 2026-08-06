@@ -1,2 +1,2 @@
 status	doi	record_url	deposited_at_utc	large_output_manifest_sha256	file_count	total_size_bytes
-pending	PENDING	PENDING	PENDING	f688133c5a9daf73b460c2df049fb1a5157640c2e30b271aa058cc6cdeb6882b	4	736108954
+deposited	10.5281/zenodo.21820090	https://zenodo.org/records/21820090	2026-08-06T16:45:00Z	74cd3824093922d73f8dd1bd7abaa3476a8a99924fdd6bb68eb84ca330a23975	10	801465955

@@ -34,7 +34,8 @@ are author-layout schematics, out of scope for the runner.
   (`figures/fig1.py`, `fig2.py`, `fig3.py`, ...; see `figures/README.md`).
 - `outputs/source_data/` — one compact table per panel; checksums in
   `outputs/run_manifests/source_data_sha256.tsv`. A few large derived
-  tables are Zenodo-pending rather than committed (see
+  tables (Figures 3A, 3F, 4E/4F, 4J, S8D) are too large to commit and are
+  instead deposited on Zenodo (see below and
   `outputs/run_manifests/zenodo_pending_large_outputs.tsv`).
 - `manuscript/` — frozen manuscript text and snapshot checksums.
 - `MANIFEST.tsv` / `MANIFEST_NOTES.md` — panel-by-panel crosswalk (source
@@ -61,7 +62,8 @@ Model regime (`ALL_FOLDS` / `FOLD_0`) is recorded per panel in
 
 Public-data provenance is in `data/SOURCES.tsv`. This code is archived at
 Zenodo: [10.5281/zenodo.21819866](https://doi.org/10.5281/zenodo.21819866)
-(citation metadata in `CITATION.cff`). A few large derived output tables
-are not yet deposited — see `outputs/run_manifests/
-zenodo_pending_large_outputs.tsv`. Code is under the license in `LICENSE`;
-third-party datasets remain under their own terms.
+(citation metadata in `CITATION.cff`). Large derived output tables too big
+to commit are archived separately: [10.5281/zenodo.21820090](https://doi.org/10.5281/zenodo.21820090)
+(file-by-file provenance in `outputs/run_manifests/
+zenodo_pending_large_outputs.tsv`). Code is under the license in
+`LICENSE`; third-party datasets remain under their own terms.

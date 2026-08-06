@@ -28,19 +28,25 @@ A file from the working archive is included only if it is:
    checksum; or
 4. a small curated input that cannot be fetched reproducibly.
 
-## Large derived tables (Zenodo-pending)
+## Large derived tables (deposited on Zenodo)
 
 Compact source tables (<15 MB) for every non-`author-layout`,
 non-`exclude` panel are in `outputs/source_data/` with SHA-256 checksums.
-A few full per-position/per-variant scan tables are too large to commit;
-their checksums, sizes, and legacy paths are in
-`outputs/run_manifests/zenodo_pending_large_outputs.tsv`, pending Zenodo
-deposit:
+Full per-position/per-variant/per-track scan tables too large to commit
+are archived at Zenodo: [10.5281/zenodo.21820090](https://doi.org/10.5281/zenodo.21820090).
+Checksums, sizes, and legacy paths for each file are in
+`outputs/run_manifests/zenodo_pending_large_outputs.tsv`:
 
 - Fig3A: `figure2A_full_region_snv_position_summary.tsv` (171 MB) and
   `figure2A_full_region_snv_synergy_liver_best_alt_by_position.tsv` (18.5 MB)
+- Fig3F: 1bp boundary-window scan, all folds (3.3 MB zipped)
+- Fig4E/4F: full per-track/per-state RNA-seq/ATAC/H3K27ac predictions for
+  the 315bp T/G transfer benchmark (`track_level.tsv` 31 MB,
+  `predictions_raw.tsv` 9 MB, `activity_raw.tsv` 6.3 MB)
 - Fig4H: `liver_cd14_monocyte_tcell_full_region_synergy_same_axis_130mm.tsv` (17.3 MB)
 - Fig4J: `dense_100kb_8tf_3tracks_variant_summary.tsv` (528 MB)
+- FigS8D: 2D scramble-boundary coordinate-grid and minimal-core sweeps,
+  all folds (10.9 MB + 4.6 MB zipped)
 
 Figure 1B's legacy script plotted AlphaGenome track data directly from a
 live API call with no cached source table; `outputs/source_data/
