@@ -2,9 +2,11 @@
 """Render source-backed Figure 1 panels from frozen release tables.
 
 Panel A is an editable author-layout schematic in ``figures/assembled``.
-Panel B can be rendered after its one-time numerical export with
-``analysis/export_fig1b_source.py``; the frozen archive did not contain those
-arrays. Panels C--F require no AlphaGenome calls or network access.
+Panel B renders from a one-time authorized numerical export (the working
+archive's legacy script plotted tracks directly from a live API response
+rather than persisting them); that export is already staged at
+``outputs/source_data/Figure1B_locus_tracks/``. Panels C--F require no
+AlphaGenome calls or network access.
 
 Usage:
     python figures/fig1.py
@@ -86,8 +88,8 @@ def render_fig1b(output_dir: Path) -> Path:
     source = SOURCE_DATA / "Figure1B_locus_tracks" / "tracks.npz"
     if not source.exists():
         raise FileNotFoundError(
-            "Figure 1B source arrays are absent. Run the authorized one-time "
-            "analysis/export_fig1b_source.py export first."
+            "Figure 1B source arrays are absent from "
+            "outputs/source_data/Figure1B_locus_tracks/."
         )
     tracks = np.load(source)
     specifications = [

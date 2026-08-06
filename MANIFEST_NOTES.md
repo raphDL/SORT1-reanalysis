@@ -67,7 +67,7 @@ the release; only the plotting script is pending):
 | S1B, S2A–C | `build_figure1_supplementary_panels.py` | Shared multi-panel builder. |
 | 3A | `panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on the two Zenodo-pending Fig3A tables above plus a GENCODE feather cache. |
 | 3B | `panel_B_base_substitution_501bp/run_native_locus_501bp_ism.py` | Combined analysis+plot script. |
-| 3C | `panel_C_motif_family_disruption/make_panel_C.py` | Needs a live genome FASTA + JASPAR scan; belongs with `analysis/`, not a pure replot. |
+| 3C | `panel_C_motif_family_disruption/make_panel_C.py` | Needs a live genome FASTA + JASPAR scan, not a pure replot. Ported to `reproduction/figure3.py::run_fig3c` as part of the clean-room analysis runner instead. |
 
 Panels not listed above (including all of Figure 4's computational
 panels) retain canonical SVGs, compact source tables, checksums, and

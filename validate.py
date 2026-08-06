@@ -28,7 +28,6 @@ REQUIRED_PATHS = (
     "environment.yml",
     "config.yaml",
     "data/SOURCES.tsv",
-    "analysis",
     "figures",
     "outputs/source_data",
     "outputs/run_manifests",
@@ -51,7 +50,7 @@ ALLOWED_MODEL_REGIME_TOKENS = {
 }
 PLACEHOLDER_PREFIXES = ("TO_ADD", "TO_IDENTIFY", "TO_FILL", "TO_REGENERATE")
 PERSONAL_PATH_MARKERS = ("/Users/", "/home/", "C:\\Users\\")
-SCRIPT_DIRS = ("analysis", "figures", "src")
+SCRIPT_DIRS = ("figures", "reproduction")
 SCRIPT_SUFFIXES = {".py", ".sh", ".zsh", ".R", ".yaml", ".yml", ".toml"}
 PUBLIC_SOURCE_REQUIRED_FIELDS = (
     "provider_or_citation",
