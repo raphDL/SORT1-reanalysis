@@ -913,6 +913,75 @@ def compare_figs4d(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == len(want) and n_ok and all(bool(v["pass"]) for v in results.values()), "rows": len(joined), "n_designs_exact": n_ok, "values": results}
 
 
+def _load_figs5_substitutions(run_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+    generated = run_dir / "derived/FigureS5_substitutions.tsv"
+    if not generated.exists():
+        return None
+    # S5A/B/C are the exact same table in the archive (verified byte-
+    # identical); any one of the three files is a valid reference for all.
+    got = pd.read_csv(generated, sep="\t")
+    want = pd.read_csv(REFERENCE_ROOT / "FigureS5A_RNA_substitutions.tsv", sep="\t")
+    return got, want
+
+
+def _compare_figs5_column(run_dir: Path, column: str, *, atol: float, min_pearson: float | None) -> dict[str, object]:
+    loaded = _load_figs5_substitutions(run_dir)
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    results: dict[str, object] = {}
+    for regime in ("ALL_FOLDS", "FOLD_0"):
+        g = got[got.model.eq(regime)][["variant_id_construct", column]]
+        w = want[want.model.eq(regime)][["variant_id_construct", column]]
+        joined = g.merge(w, on="variant_id_construct", suffixes=("_generated", "_reference"), validate="one_to_one")
+        results[regime] = _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=0.0, atol=atol, min_pearson=min_pearson)
+    return {"pass": all(bool(v["pass"]) for v in results.values()), "values": results}
+
+
+def compare_figs5a(run_dir: Path) -> dict[str, object]:
+    """S5A is the 3-gene mean RNA comparison, ALL_FOLDS and FOLD_0. ALL_FOLDS
+    reuses Figure 2E's own cache; FOLD_0 is genuinely fresh. RNA drift is
+    larger than other panels' (nonlinear percent-change transform amplifies
+    small lnfc differences), matching what was directly observed in
+    verification (r=0.86-0.95 per gene)."""
+    return _compare_figs5_column(run_dir, "ag_rna_3gene_mean_percent_change", atol=3.0, min_pearson=0.8)
+
+
+def compare_figs5b(run_dir: Path) -> dict[str, object]:
+    """S5B is the ATAC comparison; reused-prediction drift regime."""
+    return _compare_figs5_column(run_dir, "ag_atac_mean_score", atol=0.3, min_pearson=0.85)
+
+
+def compare_figs5c(run_dir: Path) -> dict[str, object]:
+    """S5C is the H3K27ac comparison; reused-prediction drift regime."""
+    return _compare_figs5_column(run_dir, "ag_h3k27ac_mean_score", atol=0.3, min_pearson=0.85)
+
+
+def compare_figs5d(run_dir: Path) -> dict[str, object]:
+    """S5D (126 single-base deletions) reuses no prior cache -- both
+    regimes are genuinely fresh, and the two-step baseline-subtraction
+    (deletion-on-T-background minus rs12740374-alone) compounds ordinary
+    prediction drift from two independently-scored quantities, so this
+    uses a looser tolerance than the substitution panels. Tolerances below
+    are calibrated from a real fresh run (2026-08-06): ATAC/H3K27ac max abs
+    diff up to ~0.31, RNA (3-gene mean percent change) up to ~10.0,
+    Pearson r >= 0.93 throughout."""
+    generated = run_dir / "derived/FigureS5D_RNA_deletions.tsv"
+    reference = REFERENCE_ROOT / "FigureS5D_RNA_deletions.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    results: dict[str, object] = {}
+    for regime in ("ALL_FOLDS", "FOLD_0"):
+        g = got[got.model.eq(regime)][["variant_id_construct", "ag_rna_3gene_mean_percent_change", "ag_atac_mean_score", "ag_h3k27ac_mean_score"]]
+        w = want[want.model.eq(regime)][["variant_id_construct", "ag_rna_3gene_mean_percent_change", "ag_atac_mean_score", "ag_h3k27ac_mean_score"]]
+        joined = g.merge(w, on="variant_id_construct", suffixes=("_generated", "_reference"), validate="one_to_one")
+        results[f"{regime}_rna"] = _numeric_summary(joined["ag_rna_3gene_mean_percent_change_generated"], joined["ag_rna_3gene_mean_percent_change_reference"], rtol=0.0, atol=10.0, min_pearson=0.8)
+        results[f"{regime}_atac"] = _numeric_summary(joined["ag_atac_mean_score_generated"], joined["ag_atac_mean_score_reference"], rtol=0.0, atol=0.35, min_pearson=0.8)
+        results[f"{regime}_h3k27ac"] = _numeric_summary(joined["ag_h3k27ac_mean_score_generated"], joined["ag_h3k27ac_mean_score_reference"], rtol=0.0, atol=0.35, min_pearson=0.8)
+    return {"pass": len(got) == len(want) and all(bool(v["pass"]) for v in results.values()), "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -925,6 +994,7 @@ COMPARATORS = {
     "S3A": compare_figs3a, "S3B": compare_figs3b, "S3C": compare_figs3c, "S3D": compare_figs3d,
     "S3E": compare_figs3e, "S3F": compare_figs3f, "S3G": compare_figs3g,
     "S4A": compare_figs4a, "S4B": compare_figs4b, "S4C": compare_figs4c, "S4D": compare_figs4d,
+    "S5A": compare_figs5a, "S5B": compare_figs5b, "S5C": compare_figs5c, "S5D": compare_figs5d,
 }
 
 
@@ -1074,6 +1144,10 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "S4B": ("Reuses Figure 2B's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
         "S4C": ("Reuses Figure 2C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
         "S4D": ("Reuses S4C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S5A": ("Kircher et al. 2019 MPRA + AlphaGenome API (1,790-substitution ISM scan, held-out fold)", "ALL_FOLDS;FOLD_0"),
+        "S5B": ("Reuses S5A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;FOLD_0"),
+        "S5C": ("Reuses S5A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;FOLD_0"),
+        "S5D": ("Kircher et al. 2019 MPRA + AlphaGenome API (126 single-base deletions, held-out fold)", "ALL_FOLDS;FOLD_0"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)

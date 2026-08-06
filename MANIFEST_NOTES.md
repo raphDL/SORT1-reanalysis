@@ -67,6 +67,7 @@ the release; only the plotting script is pending):
 | S2A–C | `build_figure1_supplementary_panels.py` | Ported to `reproduction/figureS2.py::run_figs2a`–`run_figs2c` as part of the clean-room analysis runner instead. See "Known temporal drift" below for a caveat specific to S2C. |
 | S3A–G | `panel_caQTL/run_currin_score_249_ag.py`, `panel_caQTL/run_currin_caqtl_atac_analysis.py`, `build_figure_s2.py` | Ported to `reproduction/figureS3.py::run_figs3` as part of the clean-room analysis runner instead. Needs `--currin-variants`/`--currin-peakset` (see "External data requiring manual supply" below). |
 | S4A–D | `panel_s4_wang_repair_weighting/make_figure_s4_weighted_panels.py`, `panel_wang_et_al_indels/plot_human_frequency_weighted_heatmap.py`, `archive_s4_crispr_motif_and_insertions_before_split/make_figure_s4_panels.py`, `synthetic_cutsite_scan/run_deletion_xy_full_grid.py` | Ported to `reproduction/figureS4.py::run_figs4a`–`run_figs4d`. Makes no AlphaGenome calls of its own -- S4B/C/D reuse Figure 2B/2C's already-scored sequences (verified: the 24 human indels and the 30 selected deletion designs are both within Figure 2B/2C's own scan). S4A's total/unedited read counts are frozen (no raw-sequencing source in the redistributed Wang spreadsheet); see the module docstring. |
+| S5A–D | `panel_s5_kircher_sort1_model_comparison/make_figure_s5_model_comparison.py`, `panel_kircher/kircher_t_background/run_kircher_t_background_ag.py`, `panel_kircher/kircher_t_background/deletions/run_kircher_t_background_deletions.py` | Ported to `reproduction/figureS5.py::run_figs5_substitutions`/`run_figs5d`. S5A-C's ALL_FOLDS pass reuses Figure 2E's own cache directly (verified: identical 600-position scan range); only the FOLD_0 substitution pass and both regimes of S5D (126 single-base deletions, a new two-step baseline-subtraction pipeline Figure 2E does not touch) are genuinely new AlphaGenome calls. |
 | 3A | `panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on the two Zenodo-pending Fig3A tables above plus a GENCODE feather cache. |
 | 3B | `panel_B_base_substitution_501bp/run_native_locus_501bp_ism.py` | Combined analysis+plot script. |
 | 3C | `panel_C_motif_family_disruption/make_panel_C.py` | Needs a live genome FASTA + JASPAR scan, not a pure replot. Ported to `reproduction/figure3.py::run_fig3c` as part of the clean-room analysis runner instead. |
@@ -141,3 +142,14 @@ changing its pass/fail bar is a manuscript-level decision, not a
 pipeline-maintenance one. A dedicated, deliberate full-repo freshness pass
 (all figures, not just this one) closer to submission would give a
 complete current-day picture.
+
+**Confirmed for Figure 2E while building S5** (2026-08-06): a fresh
+`--panels 2E` run (the 1,798-substitution SORT1 Kircher ISM benchmark)
+diverged from the frozen reference by up to 0.015 (H3K27ac) and 0.85
+percentage points (RNA), Pearson r 0.97-1.00 throughout -- small in
+absolute terms, but enough to fail `compare_fig2e`'s original tight
+tolerance (`atol=0.005`-`0.011`, `min_pearson=0.9999`-`0.999`), exactly as
+predicted above for Fig1C. `compare_fig2e` is left untouched for the same
+reason. S5A-D's own comparators (`compare_figs5a`-`d`, new panels with no
+prior published tolerance) were calibrated directly against this same
+2026-08-06 run's real values rather than guessed, and pass.

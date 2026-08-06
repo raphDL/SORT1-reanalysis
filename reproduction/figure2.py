@@ -639,9 +639,10 @@ def _variant_record(variant: Any) -> dict[str, object] | None:
 def _score_sort1_modality(
     consensus: pd.DataFrame, run_dir: Path, audit: Audit, modality: str,
     *, chunk_size: int, max_workers: int,
+    model_version_name: str = "ALL_FOLDS", panel: str = "2E", cache_dirname: str = "Figure2E_kircher",
 ) -> pd.DataFrame:
     genome, dna_client, dna_model, variant_scorers = _ag()
-    cache = run_dir / "predictions" / "Figure2E_kircher" / "cache"
+    cache = run_dir / "predictions" / cache_dirname / "cache"
     cache.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
     positions = sorted(consensus.Position.unique())
@@ -652,7 +653,7 @@ def _score_sort1_modality(
         {"rna": "RNA_SEQ", "atac": "ATAC", "h3k27ac": "CHIP_HISTONE"}[modality]
     ]
     interval_variant = genome.Variant(CHROM, RS_POS, RS_MAJOR, RS_MINOR, "rs12740374_T_background")
-    client = dna_client.create(api_key(), model_version=dna_model.ModelVersion.ALL_FOLDS, timeout=300)
+    client = dna_client.create(api_key(), model_version=getattr(dna_model.ModelVersion, model_version_name), timeout=300)
     for start, end in _position_chunks(positions, chunk_size):
         path = cache / f"{modality}_{start}_{end - 1}.tsv"
         paths.append(path)
@@ -673,7 +674,7 @@ def _score_sort1_modality(
                 if attempt == 5:
                     raise
                 time.sleep(min(2**attempt, 20))
-        audit.add_api_requests("2E", 1)
+        audit.add_api_requests(panel, 1)
         rows: list[dict[str, object]] = []
         for variant_outputs in outputs:
             if not variant_outputs:
@@ -720,7 +721,7 @@ def _score_sort1_modality(
                      f"{prefix}_max_abs_score": float(np.nanmax(np.abs(values)))}
                 )
         pd.DataFrame(rows).to_csv(path, sep="\t", index=False)
-        audit.add_api_calls("2E", len({row["variant_id_construct"] for row in rows}))
+        audit.add_api_calls(panel, len({row["variant_id_construct"] for row in rows}))
     return pd.concat([pd.read_csv(path, sep="\t") for path in paths], ignore_index=True)
 
 
