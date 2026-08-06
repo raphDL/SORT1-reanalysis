@@ -3,6 +3,8 @@ message: "Please cite the manuscript and archived software release associated wi
 title: "Sequence-to-function reanalysis of the SORT1 1p13.3 cholesterol locus"
 type: software
 version: 1.0.0
+doi: 10.5281/zenodo.21819866
+date-released: "2026-08-06"
 authors:
   - family-names: "Mompó Gisbert"
     given-names: "Lucía"

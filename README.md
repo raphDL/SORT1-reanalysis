@@ -59,6 +59,9 @@ Model regime (`ALL_FOLDS` / `FOLD_0`) is recorded per panel in
 
 ## Data, citation, license
 
-Public-data provenance is in `data/SOURCES.tsv`. Citation metadata is in
-`CITATION.cff` (data DOI pending Zenodo deposit). Code is under the
-license in `LICENSE`; third-party datasets remain under their own terms.
+Public-data provenance is in `data/SOURCES.tsv`. This code is archived at
+Zenodo: [10.5281/zenodo.21819866](https://doi.org/10.5281/zenodo.21819866)
+(citation metadata in `CITATION.cff`). A few large derived output tables
+are not yet deposited — see `outputs/run_manifests/
+zenodo_pending_large_outputs.tsv`. Code is under the license in `LICENSE`;
+third-party datasets remain under their own terms.
