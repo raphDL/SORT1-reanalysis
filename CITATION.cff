@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "Please cite the manuscript and archived software release associated with this repository."
 title: "Sequence-to-function reanalysis of the SORT1 1p13.3 cholesterol locus"
 type: software
-version: 0.1.0
+version: 1.0.0
 authors:
   - family-names: "Mompó Gisbert"
     given-names: "Lucía"
