@@ -1,103 +1,68 @@
-# Manifest audit notes
+# Manifest notes
 
-`MANIFEST.tsv` is the authoritative panel crosswalk for the release. It is
-assembled from the latest accepted panel decisions, not from legacy folder
-numbers alone.
+`MANIFEST.tsv` is the panel crosswalk for the release: for every figure
+panel, the source table, render script, model regime, and working-archive
+origin.
 
-## Status meanings
+## Status values
 
-- `final` — current scientific content and panel assignment are accepted.
-- `author-layout` — the panel is an author-composed schematic or adapted
-  graphical abstract; the editable Inkscape source must be added manually.
-- `exclude` — retained in the working archive but not selected for release.
+- `final` — scientific content and panel assignment are settled.
+- `author-layout` — an author-composed schematic or adapted graphical
+  abstract; the archival source is an editable Inkscape SVG, not a script.
+- `exclude` — present in the working archive but not part of the release.
 
-## Known numbering hazard
+## Panel numbering
 
-Several working folders reuse `S5` and `S6` for different generations. The
-release therefore identifies panels by scientific content and canonical asset,
-not by the legacy directory name. The final numbering was reconciled against
-the author-approved manuscript package frozen on 2026-08-01.
+Panels are identified by scientific content and canonical asset rather
+than legacy directory name, since some working-archive folder names were
+reused across analysis generations. Supplementary panels are numbered
+S1–S10, matching the manuscript.
 
-The inferred current supplementary order is:
+## Release inclusion rule
 
-1. contact controls and cross-context contact predictions;
-2. eQTL/tagging and FOLD_0 variant-prioritization diagnostics;
-3. liver caQTL locus analysis;
-4. human CRISPR repair weighting and repair-junction reconstruction;
-5. SORT1 Kircher model comparison;
-6. other-locus Kircher model comparison;
-7. native-sequence substitution and motif audit;
-8. scramble-boundary and component-necessity robustness;
-9. module-transfer controls;
-10. distal-contact and tissue-context controls.
+A file from the working archive is included only if it is:
 
-## Panels assembled outside Python
+1. a published panel or its compact source table;
+2. needed to regenerate a reported number;
+3. a frozen decision, model assignment, provenance check, or prediction
+   checksum; or
+4. a small curated input that cannot be fetched reproducibly.
 
-Adapted graphical abstracts and simple design cartoons were composed in
-Inkscape. They must be deposited as editable SVGs and mapped here before the
-release is declared complete. A raster image embedded in the manuscript is not
-sufficient as the archival source.
+## Large derived tables (Zenodo-pending)
 
-## Release rule
-
-No file is copied from the 38-GB working archive merely because it exists.
-Inclusion requires one of the following:
-
-1. it is a published panel or its compact source table;
-2. it is needed to regenerate a reported number;
-3. it records a frozen decision, model assignment, provenance check, or
-   prediction checksum;
-4. it is a small curated input that cannot be fetched reproducibly.
-
-## Data-copying pass (2026-08-01)
-
-Compact source tables for every non-`author-layout`, non-`exclude` panel have
-been copied into `outputs/source_data/` with SHA-256 checksums recorded
-alongside the copy log. Tables that are not truly compact (>15 MB; not raw
-prediction tensors, but full per-position/per-variant scans) were **not**
-copied into git. Their SHA-256 digests, sizes, and legacy paths are recorded
-in `outputs/run_manifests/zenodo_pending_large_outputs.tsv` instead, pending
-an actual Zenodo deposit and DOI:
+Compact source tables (<15 MB) for every non-`author-layout`,
+non-`exclude` panel are in `outputs/source_data/` with SHA-256 checksums.
+A few full per-position/per-variant scan tables are too large to commit;
+their checksums, sizes, and legacy paths are in
+`outputs/run_manifests/zenodo_pending_large_outputs.tsv`, pending Zenodo
+deposit:
 
 - Fig3A: `figure2A_full_region_snv_position_summary.tsv` (171 MB) and
   `figure2A_full_region_snv_synergy_liver_best_alt_by_position.tsv` (18.5 MB)
 - Fig4H: `liver_cd14_monocyte_tcell_full_region_synergy_same_axis_130mm.tsv` (17.3 MB)
 - Fig4J: `dense_100kb_8tf_3tracks_variant_summary.tsv` (528 MB)
 
-Fig1B originally had **no compact source table anywhere in the working
-archive**: its legacy script (`panel_tracks/panel_a_sort1_locus_rnaseq_cebp.py`)
-plotted AlphaGenome `TrackData` directly from a live API call. A one-time
-authorized `predict_variant` regeneration (524,288 bp, rs12740374,
-ALL_FOLDS) has now populated `outputs/source_data/Figure1B_locus_tracks/`.
-The release exporter reads its credential only from the environment and does
-not carry forward the hardcoded API-key fallback found in the legacy script.
+Figure 1B's legacy script plotted AlphaGenome track data directly from a
+live API call with no cached source table; `outputs/source_data/
+Figure1B_locus_tracks/` was regenerated via `predict_variant` (524,288 bp,
+rs12740374, `ALL_FOLDS`).
 
-## Script-porting status (2026-08-01)
+## Deterministic figure-rendering scripts
 
-`figures/` is being populated per figure. Release renderers read only frozen
-files under `outputs/source_data/`; they never call AlphaGenome or download
-public data. The frozen author-approved assets remain authoritative for final
-multi-panel composition.
+`figures/fig*.py` render published panels from `outputs/source_data/`
+only — no AlphaGenome calls, no downloads. Ported so far: Fig1C–F
+(`fig1.py`), Fig2B/C/E/F (`fig2.py`), Fig3E–G (`fig3.py`), FigS5B/C
+(`figS5.py`). Not yet ported (their compact source tables are already in
+the release; only the plotting script is pending):
 
-**Ported and test-rendered:** Fig1C–F (`figures/fig1.py`), Fig2B/C/E/F
-(`figures/fig2.py`), Fig3E–G (`figures/fig3.py`) and FigS5B/C
-(`figures/figS5.py`). These were inspected for scientific and visual
-equivalence. Exact byte identity with the legacy export is not claimed unless
-the manifest explicitly says so, because plotting-library metadata and object
-IDs differ.
-
-**Not yet ported** (compact source tables are already copied except where
-explicitly stated):
-
-| Panel | Legacy script | Why not ported this pass |
+| Panel | Legacy script | Note |
 |---|---|---|
-| S1A/S1C/S1D | `panel_contact/run_observed_hic_validation.py` | Supplementary panels remain represented by their frozen canonical SVGs. |
-| S1B | `supplementary_figures/build_figure1_supplementary_panels.py` | Shared multi-panel supplementary-figure builder. |
-| S2A-C | same file as S1B | Same builder, different function. |
-| 3A | `figure3_restructured/panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on a shared helper module (`make_compact_global_liver_ism_panel.py`) plus the two Zenodo-pending large tables above and a GENCODE feather cache; not self-contained with committed release data. |
-| 3B | `figure3_restructured/panel_B_base_substitution_501bp/run_native_locus_501bp_ism.py` | 860 lines, combined analysis+plot. |
-| 3C | `figure3_restructured/panel_C_motif_family_disruption/make_panel_C.py` | Requires a live genome FASTA (`pysam`) + JASPAR PFM scan, not a pure replot; belongs in `analysis/`, not `figures/`. |
+| S1A/S1C/S1D | `panel_contact/run_observed_hic_validation.py` | Represented by frozen canonical SVGs for now. |
+| S1B, S2A–C | `build_figure1_supplementary_panels.py` | Shared multi-panel builder. |
+| 3A | `panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on the two Zenodo-pending Fig3A tables above plus a GENCODE feather cache. |
+| 3B | `panel_B_base_substitution_501bp/run_native_locus_501bp_ism.py` | Combined analysis+plot script. |
+| 3C | `panel_C_motif_family_disruption/make_panel_C.py` | Needs a live genome FASTA + JASPAR scan; belongs with `analysis/`, not a pure replot. |
 
-Figure 4 and supplementary panels not listed above retain canonical SVGs,
-compact source tables, hashes and exact legacy-script pointers. Further
-renderer extraction is useful but is not a numerical-provenance blocker.
+Panels not listed above (including all of Figure 4's computational
+panels) retain canonical SVGs, compact source tables, checksums, and
+legacy-script pointers in `MANIFEST.tsv`.

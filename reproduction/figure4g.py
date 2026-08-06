@@ -7,8 +7,7 @@ results/figure1/panel_b/heatmap_all_ontologies/run_panel_b_heatmap_all_ontologie
 AlphaGenome variant-scoring call -- one variant, one interval, the RNA_SEQ
 RECOMMENDED_VARIANT_SCORERS scorer -- filtered client-side to 11 ontology
 tracks and displayed for 7 of them (the archive also scores a second,
-unrelated variant, rs646776, used elsewhere and not needed here). See
-REPRODUCIBILITY_NEXT_STEPS.md.
+unrelated variant, rs646776, used elsewhere and not needed here).
 """
 
 from __future__ import annotations

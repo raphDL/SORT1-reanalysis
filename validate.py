@@ -25,8 +25,6 @@ REQUIRED_PATHS = (
     "METHOD_CONVENTIONS.md",
     "LICENSE",
     "CITATION.cff",
-    "RELEASE_CHECKLIST.md",
-    "AUDIT_REPORT.md",
     "environment.yml",
     "config.yaml",
     "data/SOURCES.tsv",

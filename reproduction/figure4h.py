@@ -12,7 +12,7 @@ results/figure3/panelB/run_panel_b_figure2A_true_liver_tcell_exhaustive.py /
 results/figure3/panelD's macrophage counterpart for the other two tissues),
 plus the "best alt per position" synergy reduction from
 results/figure2/panel_a/run_panel_a_full_region_snv_synergy.py. None of
-these are part of this repository. See REPRODUCIBILITY_NEXT_STEPS.md.
+these are part of this repository.
 
 Exhaustive: every position in the +/-50kb window x each of its 3 non-
 reference bases (300,003 variants) is scored independently per tissue via

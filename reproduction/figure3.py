@@ -86,7 +86,7 @@ def run_fig3b(run_dir: Path, audit: Audit, fasta_path: Path, *, batch_size: int,
     position=mean.groupby(["edit_offset","edit_pos_hg38","native_base"],as_index=False).loss_vs_intact_T.agg(max_loss="max",min_loss="min",mean_loss="mean"); position["positive_max_loss"]=position.max_loss.clip(lower=0)
     out=run_dir/"derived/Figure3B_native_501bp_ism"; out.mkdir(parents=True,exist_ok=True); mean.to_csv(out/"native_locus_501bp_three_gene_mean_scores.tsv",sep="\t",index=False,float_format="%.12g"); position.to_csv(out/"native_locus_501bp_three_gene_mean_position_summary.tsv",sep="\t",index=False,float_format="%.12g"); _hotspots(position).to_csv(out/"native_locus_501bp_SORT1_hotspots.tsv",sep="\t",index=False,float_format="%.12g")
     # Per-gene (not gene-averaged) scores: the only extra artifact Figure 3C's
-    # PWM-compatibility scan needs from 3B (see run_fig3c / REPRODUCIBILITY_NEXT_STEPS.md).
+    # PWM-compatibility scan needs from 3B (see run_fig3c).
     all_rows.to_csv(out/"native_locus_501bp_all_gene_scores.tsv",sep="\t",index=False,float_format="%.12g")
     _render3b(position,run_dir/"figures/Figure3B.svg")
 
@@ -103,8 +103,7 @@ def _render3b(position: pd.DataFrame, output: Path) -> None:
 # position, within six prespecified sequence-sensitive windows plus the
 # known C/EBP positive control. Ported from the working archive's
 # report/figure3_restructured/panel_C_motif_family_disruption/make_panel_C.py
-# and sort1_pwm_motif_analysis.py (not part of this repository) -- see
-# REPRODUCIBILITY_NEXT_STEPS.md R019.
+# and sort1_pwm_motif_analysis.py (not part of this repository).
 
 JASPAR_URL = "https://jaspar.elixir.no/download/data/2024/CORE/JASPAR2024_CORE_vertebrates_non-redundant_pfms_jaspar.txt"
 _FIG3C_START_OFFSET, _FIG3C_END_OFFSET = -250, 250
@@ -365,7 +364,7 @@ def run_fig3c(run_dir: Path, audit: Audit, fasta_path: Path) -> None:
 # run_asymmetric_native_scramble.py (the shared "asym" library imported by
 # both run_single_arm_recovery.py [3E] and run_component_necessity.py [3G])
 # and the "wide_main_panel" 1bp-grid driver [3F] -- not part of this
-# repository. See REPRODUCIBILITY_NEXT_STEPS.md R019.
+# repository.
 
 _MINOR_MOTIF = "GTTGCTCAAT"
 _MOTIF_START_1BASED = RS_POS - 1
@@ -803,7 +802,7 @@ def run_fig3e(run_dir: Path, audit: Audit, fasta_path: Path, *, batch_size: int 
 # Stage 2 (fine): rank stage-1 windows per gene by |liver - adipose_mean|,
 # pick the top 50 non-overlapping windows/gene, full SNV scan within them.
 # Ported from the working archive's sort1_figure_2e_100kb_rna_ism.py (not
-# part of this repository). See REPRODUCIBILITY_NEXT_STEPS.md R018/R019.
+# part of this repository).
 
 _FIG3A_TISSUE_TERMS = {
     "liver": [LIVER], "adipose_subcutaneous": ["UBERON:0002190"], "adipose_visceral_omentum": ["UBERON:0010414"],

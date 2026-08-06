@@ -5,7 +5,7 @@ Ported from the working archive's report/panel_scramble_no_expression/
 (run_panel_scramble_no_expression.py, run_hpa_bottom100_380bp_distance_sweep.py,
 run_hpa_500_380bp_distance_sweep.py, run_hpa_liver_native_quarter.py,
 run_hpa_315bp_portability_replication.py) -- none of which are part of this
-repository. See REPRODUCIBILITY_NEXT_STEPS.md.
+repository.
 
 Real AlphaGenome scoring throughout: every native and transfer prediction is
 freshly computed (checkpointed per sequence hash so an interrupted run can
@@ -53,7 +53,7 @@ GENCODE_URL = "https://storage.googleapis.com/alphagenome/reference/gencode/hg38
 # matter: the NCBI build has rare IUPAC ambiguity codes (Y/W/R) at a handful
 # of positions that AlphaGenome's API rejects and that the UCSC build resolves
 # differently, so using the wrong build is a real correctness issue here, not
-# just a technical one. See REPRODUCIBILITY_NEXT_STEPS.md.
+# just a technical one.
 UCSC_HG38_URL = "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz"
 UCSC_HG38_EXPECTED_SHA256 = "5be01555d98347fdb3714dc84c6f77c9d8bc774adcf32c6f7a8fa06f5baf5e51"
 

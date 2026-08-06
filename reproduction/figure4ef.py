@@ -5,7 +5,7 @@ contact strength vs. AlphaGenome-predicted T/G transfer effect).
 Ported from the working archive's report/panel_distal_hic_transfer/
 (build_chr1_promoter_hic_catalog.py, run_chr1_distal_315_transfer.py,
 analyze_chr1_distal_transfer.py, plot_distal_contact_results.py) -- none of
-which are part of this repository. See REPRODUCIBILITY_NEXT_STEPS.md.
+which are part of this repository.
 
 Two independent stages:
 

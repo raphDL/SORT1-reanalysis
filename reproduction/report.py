@@ -284,7 +284,7 @@ def compare_fig3c(run_dir: Path) -> dict[str, object]:
     # hotspot window pick can shift by 1 bp, which this pure local PWM scan
     # then amplifies into a visibly different score for that one cell. So
     # this compares correlation and displayed-family overlap, not exact
-    # values -- see REPRODUCIBILITY_NEXT_STEPS.md R019.
+    # values.
     rows_exact = list(got.index) == list(want.index)
     shared_families = sorted(set(got.columns) & set(want.columns))
     family_overlap = len(shared_families) / len(want.columns)
@@ -550,8 +550,8 @@ def compare_fig4h(run_dir: Path, *, reference_file: Path | None = None) -> dict[
         # model snapshot's drift at that scale (not an extraction bug: the
         # reference-allele signal itself matches to the same ~1e-4 the rest
         # of this project already treats as ordinary run-to-run AlphaGenome
-        # noise -- see REPRODUCIBILITY_NEXT_STEPS.md). A real, expected FAIL
-        # here documents that finding rather than a defect in this port.
+        # noise). A real, expected FAIL here documents that finding rather
+        # than a defect in this port.
         results[track] = _numeric_summary(g.loc[common].to_numpy(), w.loc[common].to_numpy(), rtol=0.0, atol=1e-5, min_pearson=0.5)
     return {"pass": all(bool(item["pass"]) for item in results.values()), "values": results}
 

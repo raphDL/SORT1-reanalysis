@@ -23,13 +23,8 @@ python reproduce.py compare --run-dir /path/to/run
 
 Figures 4H and 4J are large exhaustive AlphaGenome screens (~900K and
 ~1.6M predictions); 4H is ported (`--panels 4H`) but its full run wasn't
-completed, and 4J is scoped but not yet ported — see
-`REPRODUCIBILITY_NEXT_STEPS.md`. Figures 1A/2A/2D/3D/4A/4D/4I are
-author-layout schematics, out of scope for the runner.
-
-`reproduction_example_reruns/` holds audit trails (timestamps, exact
-commit, per-panel PASS/FAIL) from real completed runs on a separate
-machine, each starting from an empty directory.
+completed, and 4J is scoped but not yet ported. Figures 1A/2A/2D/3D/4A/4D/4I
+are author-layout schematics, out of scope for the runner.
 
 ## Layout
 
