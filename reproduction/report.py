@@ -982,6 +982,67 @@ def compare_figs5d(run_dir: Path) -> dict[str, object]:
     return {"pass": len(got) == len(want) and all(bool(v["pass"]) for v in results.values()), "values": results}
 
 
+def _load_figs6(run_dir: Path, letter: str) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+    names = {
+        "A": "FigureS6A_DNase_ALL_FOLDS_vs_matched_heldout_source.tsv",
+        "B": "FigureS6B_ATAC_ALL_FOLDS_vs_matched_heldout_source.tsv",
+        "C": "FigureS6C_accessibility_correlation_model_comparison_source.tsv",
+    }
+    generated = run_dir / "derived/FigureS6_kircher_other_loci" / names[letter]
+    if not generated.exists():
+        return None
+    reference = REFERENCE_ROOT / "FigureS6_kircher_other_loci" / names[letter]
+    return pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+
+
+def _compare_figs6_scores(run_dir: Path, letter: str) -> dict[str, object]:
+    """S6A/B: per-substitution accessibility effects. If Figure 2F was run
+    in the same run directory beforehand, the ALL_FOLDS pass reuses its
+    cache directly (zero new calls); a standalone S6-only run scores
+    ALL_FOLDS fresh too. Either way both regimes are genuinely-computed
+    AlphaGenome predictions. Tolerance calibrated against a real fresh
+    standalone run (2026-08-06, both regimes freshly scored): max abs diff
+    up to 0.019, Pearson r >= 0.986 across all 5 elements x 2 regimes."""
+    loaded = _load_figs6(run_dir, letter)
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    keys = ["Chrom", "Pos", "Ref", "Alt", "element", "model"]
+    joined = got.merge(want, on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results: dict[str, object] = {}
+    for element, group in joined.groupby("element"):
+        for model, subgroup in group.groupby("model"):
+            results[f"{element}_{model}"] = _numeric_summary(
+                subgroup["ag_accessibility_effect_generated"], subgroup["ag_accessibility_effect_reference"],
+                rtol=0.0, atol=0.05, min_pearson=0.95,
+            )
+    return {"pass": len(joined) == len(want) and all(bool(v["pass"]) for v in results.values()), "values": results}
+
+
+def compare_figs6a(run_dir: Path) -> dict[str, object]:
+    return _compare_figs6_scores(run_dir, "A")
+
+
+def compare_figs6b(run_dir: Path) -> dict[str, object]:
+    return _compare_figs6_scores(run_dir, "B")
+
+
+def compare_figs6c(run_dir: Path) -> dict[str, object]:
+    """S6C is the per-element/modality/model Spearman-rho summary (8
+    element/modality pairs x 2 regimes = 16 rows). Tolerance calibrated
+    against a real fresh run (2026-08-06): max abs diff up to 0.010
+    (direction_agreement), 0.006 (spearman_rho/CI)."""
+    loaded = _load_figs6(run_dir, "C")
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    keys = ["element", "modality", "model"]
+    columns = ["n", "spearman_rho", "spearman_ci_low", "spearman_ci_high", "pearson_r", "direction_agreement"]
+    joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {column: _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=0.0, atol=0.05, min_pearson=None) for column in columns}
+    return {"pass": len(joined) == 16 and all(bool(v["pass"]) for v in results.values()), "element_modality_model_rows": len(joined), "statistics": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -995,6 +1056,7 @@ COMPARATORS = {
     "S3E": compare_figs3e, "S3F": compare_figs3f, "S3G": compare_figs3g,
     "S4A": compare_figs4a, "S4B": compare_figs4b, "S4C": compare_figs4c, "S4D": compare_figs4d,
     "S5A": compare_figs5a, "S5B": compare_figs5b, "S5C": compare_figs5c, "S5D": compare_figs5d,
+    "S6A": compare_figs6a, "S6B": compare_figs6b, "S6C": compare_figs6c,
 }
 
 
@@ -1148,6 +1210,9 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "S5B": ("Reuses S5A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;FOLD_0"),
         "S5C": ("Reuses S5A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;FOLD_0"),
         "S5D": ("Kircher et al. 2019 MPRA + AlphaGenome API (126 single-base deletions, held-out fold)", "ALL_FOLDS;FOLD_0"),
+        "S6A": ("Kircher et al. 2019 MPRA + AlphaGenome API (5 non-SORT1 elements, DNase, locus-matched held-out fold)", "ALL_FOLDS;matched held-out"),
+        "S6B": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
+        "S6C": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)

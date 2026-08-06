@@ -52,6 +52,7 @@ from reproduction.figureS2 import run_figs2a, run_figs2b, run_figs2c
 from reproduction.figureS3 import run_figs3
 from reproduction.figureS4 import run_figs4a, run_figs4b, run_figs4c, run_figs4d
 from reproduction.figureS5 import run_figs5_substitutions, run_figs5d
+from reproduction.figureS6 import run_figs6
 from reproduction.report import compare_run, write_report
 
 
@@ -64,9 +65,10 @@ SUPP_S2_PANELS = ["S2A", "S2B", "S2C"]
 SUPP_S3_PANELS = ["S3A", "S3B", "S3C", "S3D", "S3E", "S3F", "S3G"]
 SUPP_S4_PANELS = ["S4A", "S4B", "S4C", "S4D"]
 SUPP_S5_PANELS = ["S5A", "S5B", "S5C", "S5D"]
+SUPP_S6_PANELS = ["S6A", "S6B", "S6C"]
 SUPPORTED_PANELS = (
     FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
-    + SUPP_S1_PANELS + SUPP_S2_PANELS + SUPP_S3_PANELS + SUPP_S4_PANELS + SUPP_S5_PANELS
+    + SUPP_S1_PANELS + SUPP_S2_PANELS + SUPP_S3_PANELS + SUPP_S4_PANELS + SUPP_S5_PANELS + SUPP_S6_PANELS
 )
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -90,6 +92,7 @@ def default_run_dir(panels: list[str] | None = None) -> Path:
         else "supp_s3" if panels and set(panels).issubset(SUPP_S3_PANELS)
         else "supp_s4" if panels and set(panels).issubset(SUPP_S4_PANELS)
         else "supp_s5" if panels and set(panels).issubset(SUPP_S5_PANELS)
+        else "supp_s6" if panels and set(panels).issubset(SUPP_S6_PANELS)
         else "reproduction"
     )
     stamp = datetime.now(timezone.utc).strftime(f"{figure}_%Y%m%dT%H%M%SZ")
@@ -274,6 +277,9 @@ def run(args: argparse.Namespace) -> int:
             kircher_path = figure2_inputs.get("kircher") or fetch_kircher(args.run_dir, audit)
             fasta_path = figure2_inputs.get("fasta") or fetch_hg38(args.run_dir, audit)
             run_figs5d(args.run_dir, audit, kircher_path, fasta_path)
+        if set(args.panels) & set(SUPP_S6_PANELS):
+            kircher_path = figure2_inputs.get("kircher") or fetch_kircher(args.run_dir, audit)
+            run_figs6(args.run_dir, audit, kircher_path)
         audit.finish()
     except BaseException:
         write_report(args.run_dir)

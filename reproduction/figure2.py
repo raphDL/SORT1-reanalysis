@@ -820,11 +820,11 @@ def load_multielement(path: Path) -> dict[str, pd.DataFrame]:
 
 def _score_multielement(
     client: Any, element: str, experimental: pd.DataFrame, modality: str,
-    run_dir: Path, audit: Audit,
+    run_dir: Path, audit: Audit, *, panel: str = "2F", cache_dirname: str = "Figure2F_kircher_multielement",
 ) -> pd.DataFrame:
     genome, dna_client, _, variant_scorers = _ag()
     ontology = ELEMENTS[element][1]
-    cache = run_dir / "predictions" / "Figure2F_kircher_multielement" / modality.lower()
+    cache = run_dir / "predictions" / cache_dirname / modality.lower()
     cache.mkdir(parents=True, exist_ok=True)
     chrom = str(experimental.Chrom.iloc[0])
     start, end = int(experimental.Pos.min()), int(experimental.Pos.max())
@@ -849,7 +849,7 @@ def _score_multielement(
                 if attempt == 5:
                     raise
                 time.sleep(min(2**attempt, 20))
-        audit.add_api_requests("2F", 1)
+        audit.add_api_requests(panel, 1)
         rows = []
         for variant_outputs in outputs:
             adata = variant_outputs[0]
@@ -863,7 +863,7 @@ def _score_multielement(
                  "ontology": ontology, "modality": modality}
             )
         pd.DataFrame(rows).to_csv(path, sep="\t", index=False)
-        audit.add_api_calls("2F", len(rows))
+        audit.add_api_calls(panel, len(rows))
     return pd.concat([pd.read_csv(path, sep="\t") for path in paths], ignore_index=True).drop_duplicates(
         ["Chrom", "Pos", "Ref", "Alt"]
     )
