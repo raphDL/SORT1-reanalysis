@@ -835,6 +835,84 @@ def compare_figs3g(run_dir: Path) -> dict[str, object]:
     }
 
 
+def compare_figs4a(run_dir: Path) -> dict[str, object]:
+    """S4A is Wang read-count statistics -- no AlphaGenome call, exact-match
+    tolerance. total_reads/unedited_reads are frozen constants (see
+    reproduction/figureS4.py module docstring), so this mainly checks that
+    modeled_simple_indel_reads still reproduces from the public spreadsheet."""
+    generated = run_dir / "derived/FigureS4A_sequencing_depth.tsv"
+    reference = REFERENCE_ROOT / "FigureS4A_sequencing_depth.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    columns = ["total_reads", "unedited_reads", "modeled_simple_indel_reads", "other_indel_reads", "editing_fraction_percent", "modeled_indel_coverage_percent"]
+    results = {c: _numeric_summary(got[c], want[c], rtol=1e-4, atol=1e-5) for c in columns}
+    return {"pass": all(bool(v["pass"]) for v in results.values()), "values": results}
+
+
+def compare_figs4b(run_dir: Path) -> dict[str, object]:
+    """S4B reuses Figure 2B's already-scored sequences -- same live-model-
+    drift regime as other reused-prediction panels (observed here: max abs
+    diff ~0.37 percentage points on the weighted matrix)."""
+    generated = run_dir / "derived/FigureS4B_freqweighted_heatmap/matrix.csv"
+    reference = REFERENCE_ROOT / "FigureS4B_freqweighted_heatmap/FigureS4B_frequency_weighted_all_repair_outcomes_matrix.csv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated).set_index("gene"), pd.read_csv(reference).set_index("gene")
+    if sorted(got.columns) != sorted(want.columns):
+        return {"pass": False, "reason": "column_mismatch"}
+    got = got[want.columns]
+    result = _numeric_summary(got.to_numpy().ravel(), want.to_numpy().ravel(), rtol=0.0, atol=1.0, min_pearson=0.9)
+    return {"pass": result["pass"], "values": {"matrix": result}}
+
+
+def compare_figs4c(run_dir: Path) -> dict[str, object]:
+    """S4C's motif/protospacer/PAM overlap and post-edit junction
+    reconstruction are deterministic sequence-position arithmetic (exact-
+    match tolerance); rna_change_percent_* reuses Figure 2C's already-
+    scored sequences (drift-aware tolerance, same regime as S4B)."""
+    generated = run_dir / "derived/FigureS4C_junction_reconstruction.tsv"
+    reference = REFERENCE_ROOT / "FigureS4C_junction_reconstruction.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference)
+    joined = got.merge(want, on="design_id", suffixes=("_generated", "_reference"), validate="one_to_one")
+    exact_columns = [
+        "event_start_hg38", "event_end_hg38_inclusive", "deletes_rs12740374", "motif_overlap_bases",
+        "protospacer_overlap_bases", "pam_overlap_bases", "exact_minor_motif_present", "junction_crossing_motif_present",
+        "deletion_junction_index0", "rs12740374_index_postedit0", "postedit_motif_status",
+    ]
+    results: dict[str, object] = {}
+    for column in exact_columns:
+        g, w = joined[f"{column}_generated"], joined[f"{column}_reference"]
+        if g.dtype.kind in "fc" or w.dtype.kind in "fc":
+            results[column] = _numeric_summary(g.astype(float), w.astype(float), rtol=0.0, atol=1e-9)
+        else:
+            results[column] = {"pass": bool(g.astype(str).equals(w.astype(str)))}
+    for gene in ("SORT1", "PSRC1", "CELSR2"):
+        column = f"rna_change_percent_{gene}"
+        results[column] = _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=0.0, atol=1.0, min_pearson=0.9)
+    return {"pass": len(joined) == len(want) and all(bool(v["pass"]) for v in results.values()), "rows": len(joined), "values": results}
+
+
+def compare_figs4d(run_dir: Path) -> dict[str, object]:
+    """S4D's display_group is derived from S4C's deterministic classification
+    (exact-match on n_designs/grouping); the RNA summary statistics inherit
+    S4C's drift-aware tolerance."""
+    generated = run_dir / "derived/FigureS4D_downstream_stratified/group_summary.csv"
+    reference = REFERENCE_ROOT / "FigureS4D_downstream_stratified/figureS4C_selected_systematic_deletions_group_summary.csv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated), pd.read_csv(reference)
+    joined = got.merge(want, on=["gene_symbol", "display_group"], suffixes=("_generated", "_reference"), validate="one_to_one")
+    n_ok = bool((joined["n_designs_generated"] == joined["n_designs_reference"]).all())
+    results = {
+        column: _numeric_summary(joined[f"{column}_generated"], joined[f"{column}_reference"], rtol=0.0, atol=1.0)
+        for column in ("median_rna_change_percent", "mean_rna_change_percent", "min_rna_change_percent", "max_rna_change_percent")
+    }
+    return {"pass": len(joined) == len(want) and n_ok and all(bool(v["pass"]) for v in results.values()), "rows": len(joined), "n_designs_exact": n_ok, "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -846,6 +924,7 @@ COMPARATORS = {
     "S2A": compare_figs2a, "S2B": compare_figs2b, "S2C": compare_figs2c,
     "S3A": compare_figs3a, "S3B": compare_figs3b, "S3C": compare_figs3c, "S3D": compare_figs3d,
     "S3E": compare_figs3e, "S3F": compare_figs3f, "S3G": compare_figs3g,
+    "S4A": compare_figs4a, "S4B": compare_figs4b, "S4C": compare_figs4c, "S4D": compare_figs4d,
 }
 
 
@@ -991,6 +1070,10 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "S3E": ("Currin caQTL variant subset + AlphaGenome API (80-variant ATAC scan, held-out fold)", "FOLD_0"),
         "S3F": ("Reuses S3E + Figure 1C's tagging covariate (no new AlphaGenome calls)", "FOLD_0"),
         "S3G": ("Reuses S3A/S3F (no new AlphaGenome calls)", "FOLD_0"),
+        "S4A": ("Wang et al. 2018 supplementary spreadsheet (no AlphaGenome)", "none"),
+        "S4B": ("Reuses Figure 2B's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S4C": ("Reuses Figure 2C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S4D": ("Reuses S4C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)
