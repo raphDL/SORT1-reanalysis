@@ -255,3 +255,53 @@ No S9A comparator or "final" values.csv is committed. This needs a human
 decision (accept the residual anomaly as documented drift and calibrate a
 loose comparator around it, investigate the anomaly further, or something
 else) before finishing this panel.
+
+## S8 (boundary robustness): sized, not yet run (2026-08-08)
+
+Investigated the legacy `panel_s9_scramble_boundary_robustness/
+make_figure_s9_panels.py` (5 panels, A-E) to size the group before
+spending any budget, per the standing rule. All five draw from
+`panel_asymmetric_scramble/results/` -- the same shared library Figure
+3E/3F/3G are already ported from (`reproduction/figure3.py`'s
+`_score_design`/scramble-design machinery).
+
+- **S8A** (three-gene directional recovery): reads
+  `single_arm_recovery_all_folds_exact_nonmotif/summary.csv` (85 rows) --
+  looks like a straight reuse of Figure 3E's own already-scored ALL_FOLDS
+  design. Likely zero-cost, same pattern as S9B/S10A, but not yet verified
+  against a real Figure 3E cache.
+- **S8B** (three-gene arm necessity, ALL_FOLDS vs FOLD_0): 4 conditions
+  (downstream arm / upstream arm / C/EBP / both arms) x 3 genes --
+  matches Figure 3G's own component set exactly. The ALL_FOLDS side
+  likely reuses Figure 3G's cache directly; the FOLD_0 side is genuinely
+  new but small (Figure 3G's own real run was only 178 calls, so a FOLD_0
+  rerun of the same design should be a similar order of magnitude).
+- **S8C** ("complete 2816-window heatmap", `complete_existing_
+  coordinate_grid_all_folds/surface_summary_paired.csv`, 8,448 rows =
+  2,816 windows x 3 genes): a full/exhaustive upstream x downstream
+  boundary sweep -- this is the dominant cost driver. Figure 3F's own
+  already-ported "wide-main-panel 1bp boundary grid" covers a *smaller*
+  window-coordinate space with the identical table schema (2,688 rows,
+  16,810 real calls for that smaller grid -- a ~6.25 calls/row ratio).
+  Extrapolating that ratio to S8C's 8,448 rows gives a rough estimate of
+  **~50,000 real calls**, some fraction of which may be reusable from
+  Figure 3F's cache if the coordinate grids overlap (not yet confirmed --
+  needs the same careful "read the legacy grid-construction code, check
+  exact overlap with Figure 3F's own grid" work every other panel got
+  before this estimate can be trusted or a real run launched).
+- **S8D/E** (seed-level thresholds, final-window seed distributions):
+  read `retention_by_seed.csv` (55,225 rows) and the same complete-grid
+  data as S8C -- pure recombinations of S8C's own scored data, zero
+  additional cost once S8C exists.
+
+**Not run tonight.** S8C alone is roughly the same order of magnitude as
+the largest single-panel spends already made this session (S6, S9A), and
+the group as a whole needs the same component-by-component investigation
+S9A needed (which surfaced three real bugs there) before I'd trust a
+number enough to spend it. Given the two S9A reruns already went well
+beyond that panel's originally-sized budget chasing bugs, launching
+another ~50K-call panel on a rough extrapolated estimate, unreviewed,
+isn't a reasonable use of an open-ended "run everything" authorization --
+this is exactly the kind of item that should wait for an explicit
+decision. All code so far this session is committed and pushed; nothing
+was left mid-run.
