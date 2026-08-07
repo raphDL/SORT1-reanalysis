@@ -52,6 +52,18 @@ from .figure4 import (
 DISTANCE_ORDER = [0, 20, 30, 100, 1_000, 10_000, 100_000, 500_000]
 DISTANCE_LABELS = {0: "0", 20: "20", 30: "30", 100: "100", 1_000: "1k", 10_000: "10k", 100_000: "100k", 500_000: "500k"}
 
+# S9A's own archive script (run_hpa_liver_native_quarter.py, via the shared
+# run_panel_scramble_no_expression.py) scores a 2**19bp window, NOT Figure
+# 4B/4C's 2**20bp SEQ_LEN -- confirmed by reading that shared module's own
+# `SEQ_LEN = 2**19` constant. Reusing Figure 4's SEQ_LEN here was a real bug
+# (found after a full real S9A run): a 2x-larger scoring window gives
+# AlphaGenome's RNA-seq model twice as much surrounding sequence context,
+# which measurably changes its predictions -- confirmed to matter most for
+# genes in dense, highly-transcribed neighborhoods (e.g. ACTB, ALB, GAPDH,
+# APOA1/APOC2), where the archive's real values are far higher than what
+# the wrong (2**20) window produced.
+S9A_SEQ_LEN = 2 ** 19
+
 
 def _distribution_summary(values: np.ndarray) -> dict[str, float]:
     values = np.asarray(values, dtype=float)
@@ -216,11 +228,31 @@ def _render_figs9cde(wide: pd.DataFrame, out_dir: Path) -> None:
 # --- S9A: genome-wide HPA vs native AlphaGenome liver RNA (large, fresh) --
 
 def _all_gene_records(hpa_liver: pd.DataFrame, gene_rows: pd.DataFrame, tx_rows: pd.DataFrame) -> list[GeneRecord]:
-    """Every HPA-resolvable liver gene's protein-coding-preferred TSS (same
-    resolution logic as Figure 4C's cohort recipients, `--tss-mode gene` in
-    the legacy run_hpa_liver_native_quarter.py -- one TSS per gene, not
-    transcript-aware)."""
-    return _cohort_recipients(hpa_liver, gene_rows, tx_rows, recipient_class="hpa_liver_native_all")
+    """Every HPA-resolvable liver gene's GENE-level TSS -- the archive's
+    actual `--tss-mode gene` default in the legacy
+    run_hpa_liver_native_quarter.py (`make_gene_tss_records`): TSS is the
+    GENCODE "gene" feature's own Start (plus strand) / End (minus strand),
+    NOT any specific transcript's TSS.
+
+    This deliberately does NOT reuse Figure 4C's `_cohort_recipients`
+    (transcript-aware, picks the first protein-coding transcript's own
+    TSS) -- that was tried first and found to diverge substantially from
+    the archive for genes whose transcripts sit far from the gene
+    boundary (e.g. ACTB: 33kb apart), because Figure 4C's cohort panel
+    and the archive's own genome-wide S9A panel use two different TSS
+    conventions."""
+    merged = hpa_liver.merge(gene_rows, left_on="hpa_gene_id_base", right_on="gene_id_base", how="left", suffixes=("", "_gencode"))
+    merged = merged[merged.gene_id.notna()].copy()
+    merged["candidate_tss"] = np.where(merged.Strand.astype(str).eq("+"), merged.Start, merged.End).astype(int)
+    records = [
+        GeneRecord(
+            str(row.gene_name).upper(), str(row.gene_id), str(row.Chromosome), str(row.Strand),
+            int(row.Start), int(row.End), int(row.candidate_tss), str(row.gene_type),
+            "hpa_liver_native_all", "", "", "gene_start", 1,
+        )
+        for row in merged.itertuples(index=False)
+    ]
+    return records
 
 
 def run_figs9a(run_dir: Path, audit: Audit, *, batch_size: int = 128, max_workers: int = 8, hpa_file: Path | None = None) -> None:
@@ -245,7 +277,7 @@ def run_figs9a(run_dir: Path, audit: Audit, *, batch_size: int = 128, max_worker
         skipped = []
         for rec in records:
             try:
-                states.append(_build_native_state(fasta, rec, SEQ_LEN))
+                states.append(_build_native_state(fasta, rec, S9A_SEQ_LEN))
             except ValueError as exc:
                 skipped.append({"gene_symbol": rec.gene_symbol, "chrom": rec.chrom, "tss": rec.tss, "reason": str(exc)})
         out = run_dir / "derived/FigureS9_module_transfer_controls"
@@ -255,11 +287,15 @@ def run_figs9a(run_dir: Path, audit: Audit, *, batch_size: int = 128, max_worker
 
     scored = _score_states(run_dir, audit, "S9A", states, batch_size=batch_size, max_workers=max_workers)
     with audit.step("S9A: correlate HPA liver nTPM with native AlphaGenome liver RNA"):
-        gene_id_base = {rec.gene_symbol: rec.gene_id.split(".")[0] for rec in records}
+        # gene_id_base must come from each scored state's own gene_id (not a
+        # gene_symbol-keyed lookup into `records` -- a handful of distinct
+        # genes legitimately share a gene_symbol/paralog name with a
+        # different gene_id_base, which silently collapsed under a
+        # symbol-keyed dict and produced duplicate/misattributed rows).
         hpa_by_gene = hpa_liver.set_index("hpa_gene_id_base")
         rows = []
         for row in scored.itertuples(index=False):
-            gid_base = gene_id_base.get(row.gene_symbol)
+            gid_base = str(row.gene_id).split(".")[0]
             if gid_base not in hpa_by_gene.index:
                 continue
             hpa_row = hpa_by_gene.loc[gid_base]

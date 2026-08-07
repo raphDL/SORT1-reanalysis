@@ -33,8 +33,11 @@ python reproduce.py compare --run-dir /path/to/run
 Figures 4H and 4J are large exhaustive AlphaGenome screens (~900K and
 ~1.6M predictions); 4H is ported (`--panels 4H`) but its full run wasn't
 completed, and 4J is scoped but not yet ported. Figure S9A is similarly
-ported (`--panels S9A`) but not yet run -- a genome-wide (~20,000-gene)
-native RNA scoring pass with no zero-cost reuse available. Figures
+ported (`--panels S9A`) -- a genome-wide (~20,000-gene) native RNA scoring
+pass with no zero-cost reuse available -- but not yet finalized: real runs
+surfaced and fixed three implementation bugs plus an unresolved
+large-magnitude anomaly for a subset of extreme-expression genes; see
+`MANIFEST_NOTES.md`. Figures
 1A/2A/2D/3D/4A/4D/4I are author-layout schematics, out of scope for the
 runner. Supplementary figures beyond S1/S2/S3/S4/S5/S6/S7/S9/S10 are not
 yet ported. `--currin-variants`/`--currin-peakset` (Figure S3 only) have

@@ -1140,14 +1140,25 @@ def compare_figs9e(run_dir: Path) -> dict[str, object]:
 def compare_figs9a(run_dir: Path) -> dict[str, object]:
     """S9A is the genome-wide (~20,000 gene) HPA-vs-native correlation; the
     only Figure S9 panel with no zero-cost reuse available (every gene's
-    native prediction is freshly computed here). No prior real run exists
-    to calibrate against yet -- this is a placeholder tolerance, to be
-    recalibrated the first time S9A is actually run for real."""
+    native prediction is freshly computed here). Joined on gene_id_base, not
+    gene_symbol -- a handful of distinct genes legitimately share a
+    gene_symbol/paralog name with a different gene_id_base.
+
+    NOT YET CALIBRATED against a clean real run -- see the "S9A: three real
+    bugs fixed, one unresolved anomaly" section in MANIFEST_NOTES.md. Real
+    runs so far surfaced and fixed three implementation bugs (gene identity
+    merge, TSS convention, scoring window) but also an unresolved,
+    unexplained large-magnitude anomaly for a subset of extreme-expression
+    genes, confirmed not to be a code bug. This atol/min_pearson pair is a
+    rough placeholder from before that anomaly was found and will
+    legitimately fail against real data until that's resolved and a real
+    calibration run is spent -- do not loosen this blindly to force a pass;
+    see MANIFEST_NOTES.md first."""
     loaded = _load_figs9(run_dir, "S9A_values.csv")
     if loaded is None:
         return {"pass": False, "reason": "generated_file_missing"}
     got, want = loaded
-    keys = ["gene_symbol"]
+    keys = ["gene_id_base"]
     columns = ["rna_liver_primary", "hpa_log10", "ag_log10"]
     joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
     results = {c: _numeric_summary(joined[f"{c}_generated"], joined[f"{c}_reference"], rtol=0.0, atol=0.05, min_pearson=0.9) for c in columns}

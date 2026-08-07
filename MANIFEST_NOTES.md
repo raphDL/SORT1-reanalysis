@@ -71,7 +71,7 @@ the release; only the plotting script is pending):
 | S6A–C | `panel_s6_kircher_other_loci_model_comparison/make_figure_s6_model_comparison.py` | Ported to `reproduction/figureS6.py::run_figs6`. Locus-matched held-out replication of Figure 2F, restricted to the 5 non-SORT1 elements (F9/FOLD_0, FOXE1/FOLD_1, LDLR/FOLD_3, MYC/FOLD_1, PKLR/FOLD_2; SORT1 itself is Figure S5). The ALL_FOLDS pass reuses Figure 2F's own cache directly when `2F` is run first in the same run directory (verified zero-cost against a real cache); a standalone `--panels S6A,S6B,S6C` run (as done for the release run) scores ALL_FOLDS fresh too, since there is no pre-existing 2F cache to find -- both regimes end up genuinely fresh, ~19,500 real calls, still fully compliant with "every prediction freshly computed." |
 | S7 | `figure3_restructured/panel_B_base_substitution_501bp/run_native_hotspot_fold0_validation.py` | Ported to `reproduction/figureS7.py::run_figs7`. Reuses Figure 3B's own ISM-defined hotspot windows (see the Figure 3B hotspot-selection bugfix above) to build 8 constructs (native + 7 hotspot edits), scored fresh under ALL_FOLDS and FOLD_0 (~1,520 real calls including the Figure 3B prerequisite, run together as `--panels 3B,S7`). All 16 construct-level calls are genuinely new -- these exact full-locus sequences are not scored anywhere else in the capsule. |
 | S9B-E | `panel_s10_module_transfer_controls/build_figure_s10_transfer_controls.py` | Ported to `reproduction/figureS9.py::run_figs9b`/`run_figs9cde`. S9B reads Figure 4B's own unfiltered `predictions_with_deltas.csv` directly; S9C-E rebuild Figure 4C's exact recipient/donor design and re-invoke its scoring helper, which is checkpointed per sequence hash. Zero new AlphaGenome calls when `4B`/`4C` were run in the same run directory first (verified against real Aug-5 runs: `--panels S9B,S9C,S9D,S9E --resume` on top of a completed `4B,4C` run made 0 new calls and passed). Working-archive assets retain their former Figure S10 names. Panel F (G-module/scrambled-vs-native controls) is excluded per MANIFEST.tsv. |
-| S9A | `panel_scramble_no_expression/run_hpa_liver_native_quarter.py`, `make_hpa_ag_native_rna_correlation.py` | Ported to `reproduction/figureS9.py::run_figs9a`. Genome-wide (~20,000 HPA-resolvable liver gene) native-only AlphaGenome liver RNA scoring correlated against HPA v24.1 nTPM -- the only Figure S9 panel with no zero-cost reuse available (every gene's native prediction is freshly computed). Sized (~20,000 real calls) but not yet run; see the standing "size and confirm before an unusually large real run" rule. |
+| S9A | `panel_scramble_no_expression/run_hpa_liver_native_quarter.py`, `make_hpa_ag_native_rna_correlation.py` | Ported to `reproduction/figureS9.py::run_figs9a`. Genome-wide (~20,000 HPA-resolvable liver gene) native-only AlphaGenome liver RNA scoring correlated against HPA v24.1 nTPM -- the only Figure S9 panel with no zero-cost reuse available (every gene's native prediction is freshly computed). **Investigation in progress, not yet finalized -- see below.** |
 | S10A | `panel_s11_distal_hic_transfer/make_adapted_50kb_scatter.py` | Ported to `reproduction/figureS10.py::run_figs10a`. Pure 50kb-distance-bin recombination of Figure 4E/4F's own `analysis_table.tsv`; zero new AlphaGenome calls (verified against a real Aug-5 4E/4F run: `--panels S10A --resume` made 0 new calls and passed). |
 | S10B | `panel_fold0_tissue_replication/run_fold0_tissue_replication.py` | Ported to `reproduction/figureS10.py::run_figs10b`. Reuses Figure 4G's own single-variant, all-ontology RNA_SEQ scoring machinery under FOLD_0; reuses Figure 4G's ALL_FOLDS matrix directly when present (verified: `--panels S10B --resume` on top of a completed `4G` run made 0 new calls, after the one genuinely fresh FOLD_0 call). |
 | 3A | `panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on the two Zenodo-pending Fig3A tables above plus a GENCODE feather cache. |
@@ -192,3 +192,66 @@ main-text scientific content (per-position ISM loss values, the rendered
 Figure 3B.svg) is unaffected -- only the derived hotspot-window boundary
 selection changes, which in turn affects Figure 3C's motif scan and
 Figure S7's native-locus hotspot-construct audit.
+
+## S9A: three real bugs fixed, one unresolved anomaly under investigation (2026-08-07/08)
+
+Building S9A (genome-wide HPA-vs-native-AlphaGenome liver RNA correlation,
+~20,000 genes) surfaced three real, distinct implementation bugs, each
+found and fixed via a real run or a small real-API probe -- documented
+here in full rather than silently absorbed, per this repo's standing
+"investigate honestly, don't force a pass" rule:
+
+1. **Gene identity merge bug.** The results-assembly step matched each
+   scored gene back to its HPA record via a `gene_symbol`-keyed Python
+   dict. A handful of distinct genes (different `gene_id_base`, same
+   `gene_symbol`/paralog name) collided under that key, silently
+   misattributing rows. Fixed: match on each scored state's own `gene_id`
+   instead (already present in the state metadata).
+2. **Wrong TSS convention.** The port reused Figure 4C's transcript-level
+   TSS resolution (`_cohort_recipients`, picks the first protein-coding
+   transcript's own TSS). The archive's actual S9A script
+   (`run_hpa_liver_native_quarter.py`, `--tss-mode gene` default) uses the
+   GENCODE gene *feature's* own Start/End, not any specific transcript --
+   confirmed to diverge by >30kb for genes with transcripts far from the
+   gene boundary (e.g. ACTB). Fixed with a dedicated gene-level TSS
+   builder matching the archive's `make_gene_tss_records` exactly.
+3. **Wrong scoring window.** The port imported `SEQ_LEN` from
+   `figure4.py` (`2**20`, Figure 4B/4C's own window). The archive's S9A
+   script imports `SEQ_LEN = 2**19` from a *different* shared module
+   (`run_panel_scramble_no_expression.py`) -- half the window. Fixed with
+   a dedicated `S9A_SEQ_LEN = 2**19` constant.
+
+After fixes 1-2 (a full real rerun, ~19,800 calls) and a small 8-gene real
+probe of fix 3, a residual anomaly remains: a subset of extremely highly
+expressed genes (ACTB, ALB, GAPDH, EEF1A1, C3, VTN, APOA1, and other
+classic housekeeping/liver-plasma-protein genes) show native liver RNA
+predictions 2-5 orders of magnitude lower than the archived reference
+(e.g. ACTB: 0.00008 vs 33.7), while the bulk of the ~20,000 genes track
+the archive reasonably well (overall log10-scale Pearson r ~0.87-0.92
+mine-vs-archive; the headline HPA-vs-AlphaGenome correlation itself comes
+out r~0.70-0.76 vs the archive's r=0.82 -- same qualitative conclusion,
+measurably weaker).
+
+This was directly checked and is **not** a code bug: `client.
+predict_interval()` called directly on the true, unmodified GRCh38
+reference at ACTB's exact archive-convention TSS and window returns the
+same near-zero liver RNA-seq signal as the ported pipeline (verified
+per-track, both assays, both strands). The two `_mean_track_summary`
+implementations (this repo's and the archive's) are line-for-line
+identical. The most plausible explanation is a real, large-magnitude
+divergence in the deployed AlphaGenome model or its liver RNA-seq track
+catalog between whenever the archive was generated and now -- a much
+larger version of the backend drift already documented for Fig1C/Fig2E,
+here concentrated in a specific subset of extreme-expression genes rather
+than spread evenly. Not yet confirmed against any independent source.
+
+**Status:** the code fixes (1-3) are committed. A fresh, fully-corrected
+real run (using `S9A_SEQ_LEN`) has not yet been spent -- the two prior
+real attempts (~19,800 calls each) already used up a large, unplanned
+multiple of the originally-approved budget chasing bugs 1-2, and the
+probe for bug 3 showed it does not explain the ACTB-class anomaly, so a
+third full run was deliberately not launched without checking in first.
+No S9A comparator or "final" values.csv is committed. This needs a human
+decision (accept the residual anomaly as documented drift and calibrate a
+loose comparator around it, investigate the anomaly further, or something
+else) before finishing this panel.
