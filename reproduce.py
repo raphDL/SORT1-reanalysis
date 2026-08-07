@@ -53,6 +53,7 @@ from reproduction.figureS3 import run_figs3
 from reproduction.figureS4 import run_figs4a, run_figs4b, run_figs4c, run_figs4d
 from reproduction.figureS5 import run_figs5_substitutions, run_figs5d
 from reproduction.figureS6 import run_figs6
+from reproduction.figureS7 import run_figs7
 from reproduction.report import compare_run, write_report
 
 
@@ -66,9 +67,11 @@ SUPP_S3_PANELS = ["S3A", "S3B", "S3C", "S3D", "S3E", "S3F", "S3G"]
 SUPP_S4_PANELS = ["S4A", "S4B", "S4C", "S4D"]
 SUPP_S5_PANELS = ["S5A", "S5B", "S5C", "S5D"]
 SUPP_S6_PANELS = ["S6A", "S6B", "S6C"]
+SUPP_S7_PANELS = ["S7"]
 SUPPORTED_PANELS = (
     FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
     + SUPP_S1_PANELS + SUPP_S2_PANELS + SUPP_S3_PANELS + SUPP_S4_PANELS + SUPP_S5_PANELS + SUPP_S6_PANELS
+    + SUPP_S7_PANELS
 )
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -93,6 +96,7 @@ def default_run_dir(panels: list[str] | None = None) -> Path:
         else "supp_s4" if panels and set(panels).issubset(SUPP_S4_PANELS)
         else "supp_s5" if panels and set(panels).issubset(SUPP_S5_PANELS)
         else "supp_s6" if panels and set(panels).issubset(SUPP_S6_PANELS)
+        else "supp_s7" if panels and set(panels).issubset(SUPP_S7_PANELS)
         else "reproduction"
     )
     stamp = datetime.now(timezone.utc).strftime(f"{figure}_%Y%m%dT%H%M%SZ")
@@ -147,7 +151,7 @@ def run(args: argparse.Namespace) -> int:
                 )
         figure2_inputs: dict[str, Path] = {}
         figure3_fasta: Path | None = None
-        if set(args.panels) & set(FIGURE3_PANELS):
+        if set(args.panels) & (set(FIGURE3_PANELS) | set(SUPP_S7_PANELS)):
             with audit.step("Figure 3: download and checksum GRCh38"):
                 figure3_fasta = fetch_hg38(args.run_dir, audit)
         if set(args.panels) & set(FIGURE2_PANELS):
@@ -218,6 +222,12 @@ def run(args: argparse.Namespace) -> int:
                     run_fig3b(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
             with audit.step("3C: scan JASPAR motifs and score PWM compatibility vs Figure 3B ISM"):
                 run_fig3c(args.run_dir, audit, figure3_fasta)
+        if "S7" in args.panels:
+            if not (args.run_dir / "derived/Figure3B_native_501bp_ism/native_locus_501bp_all_gene_scores.tsv").exists():
+                with audit.step("S7 prerequisite: Figure 3B native-locus 501-bp three-gene ISM"):
+                    run_fig3b(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+            with audit.step("S7: score native-locus hotspot constructs under ALL_FOLDS/FOLD_0"):
+                run_figs7(args.run_dir, audit, figure3_fasta)
         if "3G" in args.panels:
             with audit.step("3G: expanded component-necessity audit"):
                 run_fig3g(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)

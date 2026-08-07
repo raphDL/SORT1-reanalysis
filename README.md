@@ -23,7 +23,7 @@ cp .env.example .env   # add your AlphaGenome API key
 python reproduce.py doctor
 
 python reproduce.py run \
-  --panels 1B,1C,1D,1E,1F,2B,2C,2E,2F,3A,3B,3C,3E,3F,3G,4B,4C,4E,4F,4G,S1A,S1B,S1C,S1D,S2A,S2B,S2C,S3A,S3B,S3C,S3D,S3E,S3F,S3G,S4A,S4B,S4C,S4D,S5A,S5B,S5C,S5D,S6A,S6B,S6C \
+  --panels 1B,1C,1D,1E,1F,2B,2C,2E,2F,3A,3B,3C,3E,3F,3G,4B,4C,4E,4F,4G,S1A,S1B,S1C,S1D,S2A,S2B,S2C,S3A,S3B,S3C,S3D,S3E,S3F,S3G,S4A,S4B,S4C,S4D,S5A,S5B,S5C,S5D,S6A,S6B,S6C,S7 \
   --currin-variants /path/to/currin_sort1_set539_variants.tsv \
   --currin-peakset /path/to/currin_sort1_coordinated_set_539.tsv \
   --run-dir /path/to/run
@@ -34,7 +34,7 @@ Figures 4H and 4J are large exhaustive AlphaGenome screens (~900K and
 ~1.6M predictions); 4H is ported (`--panels 4H`) but its full run wasn't
 completed, and 4J is scoped but not yet ported. Figures 1A/2A/2D/3D/4A/4D/4I
 are author-layout schematics, out of scope for the runner. Supplementary
-figures beyond S1/S2/S3/S4/S5/S6 are not yet ported. `--currin-variants`/
+figures beyond S1/S2/S3/S4/S5/S6/S7 are not yet ported. `--currin-variants`/
 `--currin-peakset` (Figure S3 only) have no automated fetch -- see
 `MANIFEST_NOTES.md` for why and where to get them.
 

@@ -1048,6 +1048,29 @@ def compare_figs6c(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == 16 and all(bool(v["pass"]) for v in results.values()), "element_modality_model_rows": len(joined), "statistics": results}
 
 
+def compare_figs7(run_dir: Path) -> dict[str, object]:
+    """S7 scores 8 constructs (native + 7 ISM-defined hotspot edits) x 2
+    models x 3 genes = 48 rows, all genuinely fresh predictions (no
+    zero-cost reuse is possible -- these exact full-locus sequences are
+    never scored elsewhere in the capsule). Tolerance calibrated against a
+    real fresh run (2026-08-07): max abs diff up to 0.0074, Pearson r
+    0.968-0.999."""
+    generated = run_dir / "derived/FigureS7_native_sequence_audit.tsv"
+    reference = REFERENCE_ROOT / "FigureS7_native_sequence_audit.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    keys = ["model", "construct", "gene"]
+    joined = got[keys + ["rna_tss", "loss_vs_intact_T"]].merge(
+        want[keys + ["rna_tss", "loss_vs_intact_T"]], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one"
+    )
+    results: dict[str, object] = {}
+    for model, group in joined.groupby("model"):
+        results[f"{model}_rna_tss"] = _numeric_summary(group.rna_tss_generated, group.rna_tss_reference, rtol=0.0, atol=0.015, min_pearson=0.95)
+        results[f"{model}_loss_vs_intact_T"] = _numeric_summary(group.loss_vs_intact_T_generated, group.loss_vs_intact_T_reference, rtol=0.0, atol=0.015, min_pearson=0.95)
+    return {"pass": len(joined) == 48 and all(bool(v["pass"]) for v in results.values()), "matched_rows": len(joined), "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -1062,6 +1085,7 @@ COMPARATORS = {
     "S4A": compare_figs4a, "S4B": compare_figs4b, "S4C": compare_figs4c, "S4D": compare_figs4d,
     "S5A": compare_figs5a, "S5B": compare_figs5b, "S5C": compare_figs5c, "S5D": compare_figs5d,
     "S6A": compare_figs6a, "S6B": compare_figs6b, "S6C": compare_figs6c,
+    "S7": compare_figs7,
 }
 
 
@@ -1218,6 +1242,7 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "S6A": ("Kircher et al. 2019 MPRA + AlphaGenome API (5 non-SORT1 elements, DNase, locus-matched held-out fold)", "ALL_FOLDS;matched held-out"),
         "S6B": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
         "S6C": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
+        "S7": ("GRCh38 + Figure 3B's own ISM-defined hotspot windows + AlphaGenome API", "ALL_FOLDS;FOLD_0"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)
