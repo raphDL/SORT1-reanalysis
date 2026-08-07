@@ -18,7 +18,7 @@ from .figure2 import BASES, CHROM, GENE_TABLE, GENES, LIVER, RS_POS, SEQ_LEN, _a
 from .figure1 import _save_svg
 
 SCAN_START, SCAN_END = -250, 250
-HOTSPOT_LENGTH, HOTSPOT_MARGIN = 12, 8
+HOTSPOT_LENGTH, HOTSPOT_MARGIN = 12, 5
 CEBP_START, CEBP_END = -1, 8
 
 
@@ -84,7 +84,13 @@ def run_fig3b(run_dir: Path, audit: Audit, fasta_path: Path, *, batch_size: int,
             audit.add_api_calls("3B",len(batch)); audit.add_api_requests("3B",1)
     all_rows=pd.concat(parts,ignore_index=True); mean=all_rows.groupby(["state_id","edit_offset","edit_pos_hg38","native_base","alt_base","sequence_sha256"],as_index=False).loss_vs_intact_T.mean().rename(columns={"loss_vs_intact_T":"loss_vs_intact_T"})
     position=mean.groupby(["edit_offset","edit_pos_hg38","native_base"],as_index=False).loss_vs_intact_T.agg(max_loss="max",min_loss="min",mean_loss="mean"); position["positive_max_loss"]=position.max_loss.clip(lower=0)
-    out=run_dir/"derived/Figure3B_native_501bp_ism"; out.mkdir(parents=True,exist_ok=True); mean.to_csv(out/"native_locus_501bp_three_gene_mean_scores.tsv",sep="\t",index=False,float_format="%.12g"); position.to_csv(out/"native_locus_501bp_three_gene_mean_position_summary.tsv",sep="\t",index=False,float_format="%.12g"); _hotspots(position).to_csv(out/"native_locus_501bp_SORT1_hotspots.tsv",sep="\t",index=False,float_format="%.12g")
+    # native_locus_501bp_SORT1_hotspots.tsv is ranked from SORT1-only loss
+    # (not the 3-gene mean above) -- matches the legacy call_hotspots(sort1)
+    # in run_native_locus_501bp_ism.py, verified to reproduce the archived
+    # hotspot windows exactly given identical input data.
+    sort1_rows=all_rows[all_rows.gene.eq("SORT1")]
+    sort1_position=sort1_rows.groupby(["edit_offset","edit_pos_hg38","native_base"],as_index=False).loss_vs_intact_T.agg(max_loss="max",min_loss="min",mean_loss="mean"); sort1_position["positive_max_loss"]=sort1_position.max_loss.clip(lower=0)
+    out=run_dir/"derived/Figure3B_native_501bp_ism"; out.mkdir(parents=True,exist_ok=True); mean.to_csv(out/"native_locus_501bp_three_gene_mean_scores.tsv",sep="\t",index=False,float_format="%.12g"); position.to_csv(out/"native_locus_501bp_three_gene_mean_position_summary.tsv",sep="\t",index=False,float_format="%.12g"); _hotspots(sort1_position).to_csv(out/"native_locus_501bp_SORT1_hotspots.tsv",sep="\t",index=False,float_format="%.12g")
     # Per-gene (not gene-averaged) scores: the only extra artifact Figure 3C's
     # PWM-compatibility scan needs from 3B (see run_fig3c).
     all_rows.to_csv(out/"native_locus_501bp_all_gene_scores.tsv",sep="\t",index=False,float_format="%.12g")

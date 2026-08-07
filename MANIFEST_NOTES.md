@@ -154,3 +154,36 @@ predicted above for Fig1C. `compare_fig2e` is left untouched for the same
 reason. S5A-D's own comparators (`compare_figs5a`-`d`, new panels with no
 prior published tolerance) were calibrated directly against this same
 2026-08-06 run's real values rather than guessed, and pass.
+
+## Fixed: Figure 3B hotspot-window selection bug (found 2026-08-07)
+
+While building Figure S7 (which needs Figure 3B's exact hotspot-window
+boundaries), `reproduction/figure3.py::run_fig3b`'s hotspot selection was
+found not to reproduce the archived `native_locus_501bp_SORT1_hotspots.tsv`
+even when fed byte-identical, zero-drift input data -- a real logic bug,
+not backend drift. Root cause, confirmed against the legacy script
+(`run_native_locus_501bp_ism.py`): the archived hotspots were selected from
+**SORT1-only** ISM loss with a **5bp** exclusion margin between candidate
+windows; the ported code instead ranked from the **3-gene mean** loss with
+an **8bp** margin, silently choosing different (1-2bp shifted, and for two
+windows entirely different) 12bp windows on every run. Fixed to match the
+legacy selection exactly (`HOTSPOT_MARGIN = 5`; a SORT1-only position
+summary now feeds `_hotspots()`); re-verified with zero new AlphaGenome
+calls (replaying a real cached Figure 3B/3C run) that the fix reproduces
+the archived hotspot windows exactly (all 6) and that Figure 3C's PWM scan,
+built on top of the corrected windows, now matches the archived reference
+**exactly** (max abs diff 0.0) rather than only within its existing loose
+tolerance.
+
+This did not previously cause either panel's own comparator to report
+FAIL: Figure 3B's comparator never checked the hotspots.tsv file's exact
+content, and Figure 3C's comparator was already deliberately tolerant of
+1bp hotspot-window shifts (see the comment in
+`report.py::compare_fig3c`) -- masking the bug rather than being fooled by
+it. Both comparators are left as-is (no tolerance was loosened; the
+existing Figure 3C tolerance still covers ordinary run-to-run drift on a
+genuinely fresh scoring pass, which is unrelated to this fix). Figure 3B's
+main-text scientific content (per-position ISM loss values, the rendered
+Figure 3B.svg) is unaffected -- only the derived hotspot-window boundary
+selection changes, which in turn affects Figure 3C's motif scan and
+Figure S7's native-locus hotspot-construct audit.

@@ -281,12 +281,17 @@ def compare_fig3c(run_dir: Path) -> dict[str, object]:
     want = pd.read_csv(reference, sep="\t", index_col=0)
     # Figure 3C's PWM scan is exact given fixed hotspot windows (verified
     # byte-identical against the release when fed the same 3B hotspots as
-    # the original publication run). But when run end to end, it inherits
-    # run_fig3b's ~1e-4 AlphaGenome run-to-run drift; a near-tied greedy
-    # hotspot window pick can shift by 1 bp, which this pure local PWM scan
-    # then amplifies into a visibly different score for that one cell. So
-    # this compares correlation and displayed-family overlap, not exact
-    # values.
+    # the original publication run -- run_fig3b's hotspot selection was
+    # fixed 2026-08-07 to rank from SORT1-only loss with a 5bp exclusion
+    # margin, matching the legacy call_hotspots(sort1); a prior version
+    # used the 3-gene mean and an 8bp margin, silently producing 1-2bp
+    # window shifts even on a byte-identical rerun). But when run fully end
+    # to end, it still inherits run_fig3b's ordinary ~1e-4 AlphaGenome
+    # run-to-run drift; a near-tied greedy hotspot window pick can still
+    # shift by 1bp on a genuinely fresh scoring pass, which this pure local
+    # PWM scan then amplifies into a visibly different score for that one
+    # cell. So this compares correlation and displayed-family overlap, not
+    # exact values.
     rows_exact = list(got.index) == list(want.index)
     shared_families = sorted(set(got.columns) & set(want.columns))
     family_overlap = len(shared_families) / len(want.columns)
