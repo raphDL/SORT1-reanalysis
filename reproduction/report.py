@@ -1071,6 +1071,127 @@ def compare_figs7(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == 48 and all(bool(v["pass"]) for v in results.values()), "matched_rows": len(joined), "values": results}
 
 
+def _load_figs9(run_dir: Path, name: str) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+    generated = run_dir / "derived/FigureS9_module_transfer_controls" / name
+    if not generated.exists():
+        return None
+    return pd.read_csv(generated), pd.read_csv(REFERENCE_ROOT / "FigureS9_module_transfer_controls" / name)
+
+
+def compare_figs9b(run_dir: Path) -> dict[str, object]:
+    """S9B reuses Figure 4B's own scored sequences (no new AlphaGenome
+    calls); the reference's T_minus_native column is always empty in the
+    archive itself (a benign upstream artifact -- the panel plot only uses
+    T_minus_G) and is not compared. Tolerance calibrated against a real
+    fresh run (2026-08-07): max abs diff up to 0.016."""
+    loaded = _load_figs9(run_dir, "S9B_per_recipient_values.csv")
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    keys = ["gene_symbol", "upstream_distance_bp"]
+    columns = ["rs127_major", "rs127_minor", "scrambled_control", "T_minus_G"]
+    joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {c: _numeric_summary(joined[f"{c}_generated"], joined[f"{c}_reference"], rtol=0.0, atol=0.03, min_pearson=0.95) for c in columns}
+    return {"pass": len(joined) == 800 and all(bool(v["pass"]) for v in results.values()), "matched_rows": len(joined), "values": results}
+
+
+def compare_figs9c(run_dir: Path) -> dict[str, object]:
+    """S9C-E rebuild Figure 4C's exact recipient/donor design and re-score
+    (checkpointed per sequence hash -- zero new AlphaGenome calls). Tolerance
+    calibrated against a real fresh run (2026-08-07): max abs diff up to
+    0.098."""
+    loaded = _load_figs9(run_dir, "S9C_per_recipient_values.csv")
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    keys = ["cohort", "gene_symbol"]
+    columns = ["native", "rs127_major", "rs127_minor", "T_minus_G"]
+    joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {c: _numeric_summary(joined[f"{c}_generated"], joined[f"{c}_reference"], rtol=0.0, atol=0.15, min_pearson=0.9) for c in columns}
+    return {"pass": len(joined) == 1471 and all(bool(v["pass"]) for v in results.values()), "matched_rows": len(joined), "values": results}
+
+
+def compare_figs9d(run_dir: Path) -> dict[str, object]:
+    """S9D is a column subset of S9C's own data; see compare_figs9c."""
+    loaded = _load_figs9(run_dir, "S9D_values.csv")
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    keys = ["cohort", "gene_symbol"]
+    joined = got[keys + ["T_minus_G"]].merge(want[keys + ["T_minus_G"]], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    result = _numeric_summary(joined.T_minus_G_generated, joined.T_minus_G_reference, rtol=0.0, atol=0.15, min_pearson=0.9)
+    return {"pass": len(joined) == 1471 and result["pass"], "matched_rows": len(joined), "values": result}
+
+
+def compare_figs9e(run_dir: Path) -> dict[str, object]:
+    """S9E is log2(T/G) computed from the same S9C-E scored data; see
+    compare_figs9c. Tolerance calibrated against a real fresh run
+    (2026-08-07): max abs diff up to 0.030."""
+    loaded = _load_figs9(run_dir, "S9E_values.csv")
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    keys = ["cohort", "gene_symbol"]
+    joined = got[keys + ["log2_T_over_G"]].merge(want[keys + ["log2_T_over_G"]], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    result = _numeric_summary(joined.log2_T_over_G_generated, joined.log2_T_over_G_reference, rtol=0.0, atol=0.06, min_pearson=0.9)
+    return {"pass": len(joined) == 1471 and result["pass"], "matched_rows": len(joined), "values": result}
+
+
+def compare_figs9a(run_dir: Path) -> dict[str, object]:
+    """S9A is the genome-wide (~20,000 gene) HPA-vs-native correlation; the
+    only Figure S9 panel with no zero-cost reuse available (every gene's
+    native prediction is freshly computed here). No prior real run exists
+    to calibrate against yet -- this is a placeholder tolerance, to be
+    recalibrated the first time S9A is actually run for real."""
+    loaded = _load_figs9(run_dir, "S9A_values.csv")
+    if loaded is None:
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = loaded
+    keys = ["gene_symbol"]
+    columns = ["rna_liver_primary", "hpa_log10", "ag_log10"]
+    joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {c: _numeric_summary(joined[f"{c}_generated"], joined[f"{c}_reference"], rtol=0.0, atol=0.05, min_pearson=0.9) for c in columns}
+    return {"pass": len(joined) >= 19000 and all(bool(v["pass"]) for v in results.values()), "matched_rows": len(joined), "values": results}
+
+
+def compare_figs10a(run_dir: Path) -> dict[str, object]:
+    """S10A reuses Figure 4E/4F's own scored sequences (no new AlphaGenome
+    calls); a pure 50kb-distance-binned recombination. Tolerance calibrated
+    against a real fresh run (2026-08-07): n off by at most 1 (a single
+    promoter can land on either side of a bin edge under ordinary
+    prediction drift); median/q25/q75 max abs diff 1.5e-4; fraction_positive
+    max abs diff 0.13 (small per-bin n near p=0.5 amplifies drift)."""
+    generated = run_dir / "derived/FigureS10_distal_and_tissue_controls/FigureS10A_contact_associated_RNA_by_50kb_distance_source.tsv"
+    reference = REFERENCE_ROOT / "FigureS10_distal_and_tissue_controls/FigureS10A_contact_associated_RNA_by_50kb_distance_source.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    joined = got.merge(want, on="distance_bin_kb", suffixes=("_generated", "_reference"), validate="one_to_one")
+    n_diff = (joined.n_generated - joined.n_reference).abs()
+    results = {
+        "n": {"pass": bool((n_diff <= 2).all()), "max_abs_difference": float(n_diff.max())},
+        "median_primary_interaction_rna": _numeric_summary(joined.median_primary_interaction_rna_generated, joined.median_primary_interaction_rna_reference, rtol=0.0, atol=0.001),
+        "q25_primary_interaction_rna": _numeric_summary(joined.q25_primary_interaction_rna_generated, joined.q25_primary_interaction_rna_reference, rtol=0.0, atol=0.001),
+        "q75_primary_interaction_rna": _numeric_summary(joined.q75_primary_interaction_rna_generated, joined.q75_primary_interaction_rna_reference, rtol=0.0, atol=0.001),
+        "fraction_positive": _numeric_summary(joined.fraction_positive_generated, joined.fraction_positive_reference, rtol=0.0, atol=0.2),
+    }
+    return {"pass": len(joined) == 20 and all(bool(v["pass"]) for v in results.values()), "matched_bins": len(joined), "values": results}
+
+
+def compare_figs10b(run_dir: Path) -> dict[str, object]:
+    """S10B reuses Figure 4G's own ALL_FOLDS matrix when present (zero new
+    calls); FOLD_0 is a single genuinely fresh AlphaGenome call. Tolerance
+    calibrated against a real fresh run (2026-08-07): max abs diff 0.0063."""
+    generated = run_dir / "derived/FigureS10_distal_and_tissue_controls/fold0_tissue_matrix.tsv"
+    reference = REFERENCE_ROOT / "FigureS10_distal_and_tissue_controls/fold0_tissue_matrix.tsv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated, sep="\t"), pd.read_csv(reference, sep="\t")
+    joined = got.merge(want, on="context", suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {gene: _numeric_summary(joined[f"{gene}_generated"], joined[f"{gene}_reference"], rtol=0.0, atol=0.02, min_pearson=0.9) for gene in ("SORT1", "PSRC1", "CELSR2")}
+    return {"pass": len(joined) == 7 and all(bool(v["pass"]) for v in results.values()), "matched_contexts": len(joined), "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -1086,6 +1207,8 @@ COMPARATORS = {
     "S5A": compare_figs5a, "S5B": compare_figs5b, "S5C": compare_figs5c, "S5D": compare_figs5d,
     "S6A": compare_figs6a, "S6B": compare_figs6b, "S6C": compare_figs6c,
     "S7": compare_figs7,
+    "S9A": compare_figs9a, "S9B": compare_figs9b, "S9C": compare_figs9c, "S9D": compare_figs9d, "S9E": compare_figs9e,
+    "S10A": compare_figs10a, "S10B": compare_figs10b,
 }
 
 
@@ -1243,6 +1366,13 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "S6B": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
         "S6C": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
         "S7": ("GRCh38 + Figure 3B's own ISM-defined hotspot windows + AlphaGenome API", "ALL_FOLDS;FOLD_0"),
+        "S9A": ("HPA v24.1 + GENCODE v46 + AlphaGenome API (genome-wide, ~20,000 genes)", "ALL_FOLDS"),
+        "S9B": ("Reuses Figure 4B's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S9C": ("Reuses Figure 4C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S9D": ("Reuses Figure 4C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S9E": ("Reuses Figure 4C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S10A": ("Reuses Figure 4E/4F's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S10B": ("Reuses Figure 4G's ALL_FOLDS matrix when present + AlphaGenome API (1 fresh FOLD_0 call)", "ALL_FOLDS;FOLD_0"),
     }
     for panel in audit["panels"]:
         panel_comparison = comparison and comparison.get("panels", {}).get(panel)

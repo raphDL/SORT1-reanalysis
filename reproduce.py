@@ -54,6 +54,8 @@ from reproduction.figureS4 import run_figs4a, run_figs4b, run_figs4c, run_figs4d
 from reproduction.figureS5 import run_figs5_substitutions, run_figs5d
 from reproduction.figureS6 import run_figs6
 from reproduction.figureS7 import run_figs7
+from reproduction.figureS9 import run_figs9a, run_figs9b, run_figs9cde
+from reproduction.figureS10 import run_figs10a, run_figs10b
 from reproduction.report import compare_run, write_report
 
 
@@ -68,10 +70,12 @@ SUPP_S4_PANELS = ["S4A", "S4B", "S4C", "S4D"]
 SUPP_S5_PANELS = ["S5A", "S5B", "S5C", "S5D"]
 SUPP_S6_PANELS = ["S6A", "S6B", "S6C"]
 SUPP_S7_PANELS = ["S7"]
+SUPP_S9_PANELS = ["S9A", "S9B", "S9C", "S9D", "S9E"]
+SUPP_S10_PANELS = ["S10A", "S10B"]
 SUPPORTED_PANELS = (
     FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
     + SUPP_S1_PANELS + SUPP_S2_PANELS + SUPP_S3_PANELS + SUPP_S4_PANELS + SUPP_S5_PANELS + SUPP_S6_PANELS
-    + SUPP_S7_PANELS
+    + SUPP_S7_PANELS + SUPP_S9_PANELS + SUPP_S10_PANELS
 )
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -97,6 +101,8 @@ def default_run_dir(panels: list[str] | None = None) -> Path:
         else "supp_s5" if panels and set(panels).issubset(SUPP_S5_PANELS)
         else "supp_s6" if panels and set(panels).issubset(SUPP_S6_PANELS)
         else "supp_s7" if panels and set(panels).issubset(SUPP_S7_PANELS)
+        else "supp_s9" if panels and set(panels).issubset(SUPP_S9_PANELS)
+        else "supp_s10" if panels and set(panels).issubset(SUPP_S10_PANELS)
         else "reproduction"
     )
     stamp = datetime.now(timezone.utc).strftime(f"{figure}_%Y%m%dT%H%M%SZ")
@@ -253,6 +259,23 @@ def run(args: argparse.Namespace) -> int:
                     run_fig4ef(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
         if "4G" in args.panels:
             run_fig4g(args.run_dir, audit)
+        if "S9B" in args.panels:
+            if not (args.run_dir / "derived/Figure4B_distance_response/predictions_with_deltas.csv").exists():
+                with audit.step("S9B prerequisite: Figure 4B bottom100 315bp donor eight-distance sweep"):
+                    run_fig4b(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
+            run_figs9b(args.run_dir, audit)
+        if set(args.panels) & {"S9C", "S9D", "S9E"}:
+            run_figs9cde(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "S9A" in args.panels:
+            run_figs9a(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers, hpa_file=args.hpa_file)
+        if "S10A" in args.panels:
+            done_marker = args.run_dir / "derived/Figure4EF_distal_contact_transfer/Figure4F_contact_dose_response.tsv"
+            if not done_marker.exists():
+                with audit.step("S10A prerequisite: Figure 4E/4F chr1 Hi-C-guided distal-contact 315bp T/G transfer benchmark"):
+                    run_fig4ef(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
+            run_figs10a(args.run_dir, audit)
+        if "S10B" in args.panels:
+            run_figs10b(args.run_dir, audit)
         if "4H" in args.panels:
             with audit.step("4H: exhaustive +/-50kb x 3-alt x 3-tissue regional ISM synergy scan"):
                 run_fig4h(args.run_dir, audit, batch_size=args.batch_size, max_workers=args.max_workers)
