@@ -11,7 +11,7 @@ computational reanalysis of the `SORT1` 1p13.3 cholesterol locus with
 AlphaGenome.
 
 
-## Reproducing from scratch
+## Reproducing from scratch 🏁
 
 `reproduce.py` + `reproduction/` is the clean-room capsule: it downloads
 every public input fresh and calls the AlphaGenome API fresh for every
@@ -38,7 +38,7 @@ figures beyond S1/S2/S3/S4/S5/S6/S7 are not yet ported. `--currin-variants`/
 `--currin-peakset` (Figure S3 only) have no automated fetch -- see
 `MANIFEST_NOTES.md` for why and where to get them.
 
-## Regenerating figures from existing predictions (fast)
+## Regenerating figures from existing predictions (fast) 🏎️
 
 The commands above re-run every AlphaGenome prediction from scratch —
 useful for verifying reproducibility, but slow and API-cost-bearing. If
