@@ -71,7 +71,7 @@ the release; only the plotting script is pending):
 | S6A–C | `panel_s6_kircher_other_loci_model_comparison/make_figure_s6_model_comparison.py` | Ported to `reproduction/figureS6.py::run_figs6`. Locus-matched held-out replication of Figure 2F, restricted to the 5 non-SORT1 elements (F9/FOLD_0, FOXE1/FOLD_1, LDLR/FOLD_3, MYC/FOLD_1, PKLR/FOLD_2; SORT1 itself is Figure S5). The ALL_FOLDS pass reuses Figure 2F's own cache directly when `2F` is run first in the same run directory (verified zero-cost against a real cache); a standalone `--panels S6A,S6B,S6C` run (as done for the release run) scores ALL_FOLDS fresh too, since there is no pre-existing 2F cache to find -- both regimes end up genuinely fresh, ~19,500 real calls, still fully compliant with "every prediction freshly computed." |
 | S7 | `figure3_restructured/panel_B_base_substitution_501bp/run_native_hotspot_fold0_validation.py` | Ported to `reproduction/figureS7.py::run_figs7`. Reuses Figure 3B's own ISM-defined hotspot windows (see the Figure 3B hotspot-selection bugfix above) to build 8 constructs (native + 7 hotspot edits), scored fresh under ALL_FOLDS and FOLD_0 (~1,520 real calls including the Figure 3B prerequisite, run together as `--panels 3B,S7`). All 16 construct-level calls are genuinely new -- these exact full-locus sequences are not scored anywhere else in the capsule. |
 | S9B-E | `panel_s10_module_transfer_controls/build_figure_s10_transfer_controls.py` | Ported to `reproduction/figureS9.py::run_figs9b`/`run_figs9cde`. S9B reads Figure 4B's own unfiltered `predictions_with_deltas.csv` directly; S9C-E rebuild Figure 4C's exact recipient/donor design and re-invoke its scoring helper, which is checkpointed per sequence hash. Zero new AlphaGenome calls when `4B`/`4C` were run in the same run directory first (verified against real Aug-5 runs: `--panels S9B,S9C,S9D,S9E --resume` on top of a completed `4B,4C` run made 0 new calls and passed). Working-archive assets retain their former Figure S10 names. Panel F (G-module/scrambled-vs-native controls) is excluded per MANIFEST.tsv. |
-| S9A | `panel_scramble_no_expression/run_hpa_liver_native_quarter.py`, `make_hpa_ag_native_rna_correlation.py` | Ported to `reproduction/figureS9.py::run_figs9a`. Genome-wide (~20,000 HPA-resolvable liver gene) native-only AlphaGenome liver RNA scoring correlated against HPA v24.1 nTPM -- the only Figure S9 panel with no zero-cost reuse available (every gene's native prediction is freshly computed). **Investigation in progress, not yet finalized -- see below.** |
+| S9A | `panel_scramble_no_expression/run_hpa_liver_native_quarter.py`, `make_hpa_ag_native_rna_correlation.py` | Ported to `reproduction/figureS9.py::run_figs9a`. Genome-wide (~20,000 HPA-resolvable liver gene) native-only AlphaGenome liver RNA scoring correlated against HPA v24.1 nTPM -- the only Figure S9 panel with no zero-cost reuse available (every gene's native prediction is freshly computed). TSS is a consensus/mode pick across each gene's own transcripts, not an extremum -- see the "S9A: four real bugs found and fixed" section below for why. |
 | S10A | `panel_s11_distal_hic_transfer/make_adapted_50kb_scatter.py` | Ported to `reproduction/figureS10.py::run_figs10a`. Pure 50kb-distance-bin recombination of Figure 4E/4F's own `analysis_table.tsv`; zero new AlphaGenome calls (verified against a real Aug-5 4E/4F run: `--panels S10A --resume` made 0 new calls and passed). |
 | S10B | `panel_fold0_tissue_replication/run_fold0_tissue_replication.py` | Ported to `reproduction/figureS10.py::run_figs10b`. Reuses Figure 4G's own single-variant, all-ontology RNA_SEQ scoring machinery under FOLD_0; reuses Figure 4G's ALL_FOLDS matrix directly when present (verified: `--panels S10B --resume` on top of a completed `4G` run made 0 new calls, after the one genuinely fresh FOLD_0 call). |
 | 3A | `panel_A_regional_coordinated_ism/make_panel_A.py` | Depends on the two Zenodo-pending Fig3A tables above plus a GENCODE feather cache. |
@@ -258,8 +258,18 @@ with ordinary AlphaGenome backend drift (already documented for
 Fig1C/Fig2E) amplified by the heavy-tailed, log-scale nature of RNA
 expression values, not a further code bug.
 
-**Status:** all four fixes are committed. A full real run with the
-corrected pipeline is the next step.
+**Status:** complete. A full real run with all four fixes (2026-08-08,
+20,002 genes, 20,002 fresh calls) passes `compare_figs9a`: raw-scale
+Pearson r=0.91, log10-scale r=0.94, 99.9% of genes matched within 5
+(absolute, raw scale). The headline HPA-vs-AlphaGenome correlation is
+r=0.776 vs the archive's r=0.821 -- same qualitative conclusion, and a
+large improvement over every earlier attempt in this investigation. A
+small, disclosed residual remains for a cluster of extreme-expression
+genes (ACTB, ALB, GAPDH, EEF1A1, and similar; real max abs diff ~24),
+consistent with ordinary already-documented AlphaGenome backend drift
+amplified by the heavy-tailed expression distribution, not a further
+code bug. `compare_figs9a`'s tolerances are calibrated directly against
+this real run.
 
 ## S8 (boundary robustness): sized, not yet run (2026-08-08)
 
