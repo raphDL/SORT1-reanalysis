@@ -54,6 +54,7 @@ from reproduction.figureS4 import run_figs4a, run_figs4b, run_figs4c, run_figs4d
 from reproduction.figureS5 import run_figs5_substitutions, run_figs5d
 from reproduction.figureS6 import run_figs6
 from reproduction.figureS7 import run_figs7
+from reproduction.figureS8 import run_figs8a, run_figs8b
 from reproduction.figureS9 import run_figs9a, run_figs9b, run_figs9cde
 from reproduction.figureS10 import run_figs10a, run_figs10b
 from reproduction.report import compare_run, write_report
@@ -70,12 +71,13 @@ SUPP_S4_PANELS = ["S4A", "S4B", "S4C", "S4D"]
 SUPP_S5_PANELS = ["S5A", "S5B", "S5C", "S5D"]
 SUPP_S6_PANELS = ["S6A", "S6B", "S6C"]
 SUPP_S7_PANELS = ["S7"]
+SUPP_S8_PANELS = ["S8A", "S8B", "S8C", "S8D", "S8E"]
 SUPP_S9_PANELS = ["S9A", "S9B", "S9C", "S9D", "S9E"]
 SUPP_S10_PANELS = ["S10A", "S10B"]
 SUPPORTED_PANELS = (
     FIGURE1_PANELS + ["1C-middle"] + FIGURE2_PANELS + FIGURE3_PANELS + FIGURE4_PANELS
     + SUPP_S1_PANELS + SUPP_S2_PANELS + SUPP_S3_PANELS + SUPP_S4_PANELS + SUPP_S5_PANELS + SUPP_S6_PANELS
-    + SUPP_S7_PANELS + SUPP_S9_PANELS + SUPP_S10_PANELS
+    + SUPP_S7_PANELS + SUPP_S8_PANELS + SUPP_S9_PANELS + SUPP_S10_PANELS
 )
 DEFAULT_PANELS = FIGURE1_PANELS
 DEFAULT_KEY_FILE = REPO_ROOT / "ALPHAGENOME_API_KEY.txt"
@@ -101,6 +103,7 @@ def default_run_dir(panels: list[str] | None = None) -> Path:
         else "supp_s5" if panels and set(panels).issubset(SUPP_S5_PANELS)
         else "supp_s6" if panels and set(panels).issubset(SUPP_S6_PANELS)
         else "supp_s7" if panels and set(panels).issubset(SUPP_S7_PANELS)
+        else "supp_s8" if panels and set(panels).issubset(SUPP_S8_PANELS)
         else "supp_s9" if panels and set(panels).issubset(SUPP_S9_PANELS)
         else "supp_s10" if panels and set(panels).issubset(SUPP_S10_PANELS)
         else "reproduction"
@@ -157,7 +160,7 @@ def run(args: argparse.Namespace) -> int:
                 )
         figure2_inputs: dict[str, Path] = {}
         figure3_fasta: Path | None = None
-        if set(args.panels) & (set(FIGURE3_PANELS) | set(SUPP_S7_PANELS)):
+        if set(args.panels) & (set(FIGURE3_PANELS) | set(SUPP_S7_PANELS) | set(SUPP_S8_PANELS)):
             with audit.step("Figure 3: download and checksum GRCh38"):
                 figure3_fasta = fetch_hg38(args.run_dir, audit)
         if set(args.panels) & set(FIGURE2_PANELS):
@@ -240,6 +243,13 @@ def run(args: argparse.Namespace) -> int:
         if "3E" in args.panels:
             with audit.step("3E: directional single-arm motif-protected recovery"):
                 run_fig3e(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "S8A" in args.panels:
+            if not (args.run_dir / "derived/Figure3E_directional_recovery/retention_by_seed.csv").exists():
+                with audit.step("S8A prerequisite: Figure 3E directional single-arm motif-protected recovery"):
+                    run_fig3e(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+            run_figs8a(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
+        if "S8B" in args.panels:
+            run_figs8b(args.run_dir, audit, figure3_fasta, batch_size=args.batch_size, max_workers=args.max_workers)
         if "3A" in args.panels:
             with audit.step("3A: 100kb regional two-stage RNA(TSS) ISM scan"):
                 run_fig3a(args.run_dir, audit, figure3_fasta)

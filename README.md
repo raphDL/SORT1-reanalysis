@@ -23,7 +23,7 @@ cp .env.example .env   # add your AlphaGenome API key
 python reproduce.py doctor
 
 python reproduce.py run \
-  --panels 1B,1C,1D,1E,1F,2B,2C,2E,2F,3A,3B,3C,3E,3F,3G,4B,4C,4E,4F,4G,S1A,S1B,S1C,S1D,S2A,S2B,S2C,S3A,S3B,S3C,S3D,S3E,S3F,S3G,S4A,S4B,S4C,S4D,S5A,S5B,S5C,S5D,S6A,S6B,S6C,S7,S9A,S9B,S9C,S9D,S9E,S10A,S10B \
+  --panels 1B,1C,1D,1E,1F,2B,2C,2E,2F,3A,3B,3C,3E,3F,3G,4B,4C,4E,4F,4G,S1A,S1B,S1C,S1D,S2A,S2B,S2C,S3A,S3B,S3C,S3D,S3E,S3F,S3G,S4A,S4B,S4C,S4D,S5A,S5B,S5C,S5D,S6A,S6B,S6C,S7,S8A,S8B,S9A,S9B,S9C,S9D,S9E,S10A,S10B \
   --currin-variants /path/to/currin_sort1_set539_variants.tsv \
   --currin-peakset /path/to/currin_sort1_coordinated_set_539.tsv \
   --run-dir /path/to/run
@@ -37,8 +37,9 @@ S9A`) is a genome-wide (~20,000-gene) native RNA scoring pass with no
 zero-cost reuse available; building it surfaced and fixed four real
 implementation bugs, documented in full in `MANIFEST_NOTES.md`. Figures
 1A/2A/2D/3D/4A/4D/4I are author-layout schematics, out of scope for the
-runner. Supplementary figures beyond S1/S2/S3/S4/S5/S6/S7/S9/S10 are not
-yet ported. `--currin-variants`/`--currin-peakset` (Figure S3 only) have
+runner. Figure S8A/B are ported (`--panels S8A,S8B`); S8C-E (a precisely
+sized ~68,000-call exhaustive boundary grid) are scoped but not yet run --
+see `MANIFEST_NOTES.md`. `--currin-variants`/`--currin-peakset` (Figure S3 only) have
 no automated fetch -- see `MANIFEST_NOTES.md` for why and where to get
 them.
 

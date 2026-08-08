@@ -271,52 +271,64 @@ amplified by the heavy-tailed expression distribution, not a further
 code bug. `compare_figs9a`'s tolerances are calibrated directly against
 this real run.
 
-## S8 (boundary robustness): sized, not yet run (2026-08-08)
+## S8 (boundary robustness): A/B done, C-E precisely sized (2026-08-08)
 
 Investigated the legacy `panel_s9_scramble_boundary_robustness/
-make_figure_s9_panels.py` (5 panels, A-E) to size the group before
-spending any budget, per the standing rule. All five draw from
+make_figure_s9_panels.py` (5 panels, A-E). All five draw from
 `panel_asymmetric_scramble/results/` -- the same shared library Figure
-3E/3F/3G are already ported from (`reproduction/figure3.py`'s
-`_score_design`/scramble-design machinery).
+3E/3F/3G are already ported from.
 
-- **S8A** (three-gene directional recovery): reads
-  `single_arm_recovery_all_folds_exact_nonmotif/summary.csv` (85 rows) --
-  looks like a straight reuse of Figure 3E's own already-scored ALL_FOLDS
-  design. Likely zero-cost, same pattern as S9B/S10A, but not yet verified
-  against a real Figure 3E cache.
-- **S8B** (three-gene arm necessity, ALL_FOLDS vs FOLD_0): 4 conditions
-  (downstream arm / upstream arm / C/EBP / both arms) x 3 genes --
-  matches Figure 3G's own component set exactly. The ALL_FOLDS side
-  likely reuses Figure 3G's cache directly; the FOLD_0 side is genuinely
-  new but small (Figure 3G's own real run was only 178 calls, so a FOLD_0
-  rerun of the same design should be a similar order of magnitude).
-- **S8C** ("complete 2816-window heatmap", `complete_existing_
-  coordinate_grid_all_folds/surface_summary_paired.csv`, 8,448 rows =
-  2,816 windows x 3 genes): a full/exhaustive upstream x downstream
-  boundary sweep -- this is the dominant cost driver. Figure 3F's own
-  already-ported "wide-main-panel 1bp boundary grid" covers a *smaller*
-  window-coordinate space with the identical table schema (2,688 rows,
-  16,810 real calls for that smaller grid -- a ~6.25 calls/row ratio).
-  Extrapolating that ratio to S8C's 8,448 rows gives a rough estimate of
-  **~50,000 real calls**, some fraction of which may be reusable from
-  Figure 3F's cache if the coordinate grids overlap (not yet confirmed --
-  needs the same careful "read the legacy grid-construction code, check
-  exact overlap with Figure 3F's own grid" work every other panel got
-  before this estimate can be trusted or a real run launched).
+- **S8A** (three-gene directional recovery). Confirmed and verified: a
+  pure zero-cost reuse of Figure 3E's own design/cache
+  (`_fig3e_build_design`/`_fig3e_retention`, identical
+  UPSTREAM_EXTENTS/DOWNSTREAM_EXTENTS/SEEDS constants as the archive's
+  `run_single_arm_recovery.py`). Real check against a cached Figure 3E
+  run: byte-exact (max abs diff ~2e-14, float noise), 0 new calls.
+- **S8B** (three-gene arm necessity, ALL_FOLDS vs FOLD_0). An earlier
+  attempt assumed this reuses Figure 3G's component-necessity design
+  (same 4 displayed conditions) -- a real run showed a real mismatch (up
+  to 0.33 retention units, not noise). Root cause: S8B's actual archive
+  script is `run_single_arm_scramble.py`, not Figure 3G's source. It uses
+  a different construction -- a shared "armwise" scrambled template
+  (`shared_armwise_scramble_template`, coincidentally byte-identical to a
+  function Figure 3F's own port already needed and has as
+  `_shared_armwise_scramble_template`) with scrambled bases copied *into*
+  a native background over just the target arm interval (the same
+  "inside_scramble" direction Figure 3F's `_fig3f_nested_background`
+  already implements, generalized to a single non-symmetric interval).
+  Reimplemented as `_arm_scramble_background`; both ALL_FOLDS and FOLD_0
+  are genuinely fresh (130 calls total for the initial 4-condition
+  version, +32 more once a missing `full_315` control condition was
+  added to match the archive's full 6-condition, 18-row-per-model
+  schema). Real run: max abs diff 0.033 (ALL_FOLDS) / 0.082 (FOLD_0) --
+  ordinary drift, consistent with typical real-run comparisons
+  throughout this campaign, not a construction bug.
+- **S8C** ("complete 2,816-window heatmap"). Found the archive's own
+  frozen planning document
+  (`COMPLETE_EXISTING_COORDINATE_GRID_PLAN.md`), which gives exact
+  numbers: a 44 (upstream) x 64 (downstream) = 2,816-geometry Cartesian
+  grid, 8 scramble seeds x {outside_scramble, inside_scramble} x
+  {REF,ALT} = 32 sequences per geometry. Critically, S8C's construction
+  is the *same* `shared_armwise_scramble_template` +
+  `nested_background`/"outside_scramble"+"inside_scramble" machinery
+  Figure 3F already ports byte-for-byte (`_fig3f_nested_background`,
+  `_score_design(..., panel="3F", ...)`), just over a much wider,
+  sparser coordinate grid than Figure 3F's own 16 (upstream 175-190) x
+  56 (downstream 105-160) = 896-pair exhaustive rectangle. Every S8C grid
+  point that falls inside Figure 3F's rectangle is therefore a guaranteed
+  zero-cost cache hit if scored via the same `_score_design(...,
+  panel="3F", ...)` call. Overlap: all 16 of S8C's upstream values inside
+  175-190 are covered, and 43 of S8C's 64 downstream values fall inside
+  Figure 3F's 105-160 range (110, 115, and every integer 120-160) -- 688
+  of 2,816 pairs (24%) are free. **Net new: 2,128 pairs x 32 sequences =
+  68,096 real calls** -- precisely sized, not a rough extrapolation.
 - **S8D/E** (seed-level thresholds, final-window seed distributions):
-  read `retention_by_seed.csv` (55,225 rows) and the same complete-grid
-  data as S8C -- pure recombinations of S8C's own scored data, zero
-  additional cost once S8C exists.
+  pure recombinations of S8C's own scored data (`retention_by_seed.csv`,
+  55,225 rows) once S8C exists -- zero additional cost.
 
-**Not run tonight.** S8C alone is roughly the same order of magnitude as
-the largest single-panel spends already made this session (S6, S9A), and
-the group as a whole needs the same component-by-component investigation
-S9A needed (which surfaced three real bugs there) before I'd trust a
-number enough to spend it. Given the two S9A reruns already went well
-beyond that panel's originally-sized budget chasing bugs, launching
-another ~50K-call panel on a rough extrapolated estimate, unreviewed,
-isn't a reasonable use of an open-ended "run everything" authorization --
-this is exactly the kind of item that should wait for an explicit
-decision. All code so far this session is committed and pushed; nothing
-was left mid-run.
+**S8C-E not run yet.** 68,096 calls is roughly 3x the largest single
+panel spent this session (S6/S9A, ~20K each) -- precisely sized this time
+(not a rough guess), and the construction is proven correct (S8B's fix
+used the exact same underlying functions), but the scale itself still
+warrants an explicit decision rather than being swept in under a general
+"start S8" instruction.

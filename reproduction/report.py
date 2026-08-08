@@ -1209,6 +1209,43 @@ def compare_figs10b(run_dir: Path) -> dict[str, object]:
     return {"pass": len(joined) == 7 and all(bool(v["pass"]) for v in results.values()), "matched_contexts": len(joined), "values": results}
 
 
+def compare_figs8a(run_dir: Path) -> dict[str, object]:
+    """S8A reuses Figure 3E's own design/cache exactly -- verified
+    byte-identical (float noise, max abs diff ~2e-14) against a real
+    cached run."""
+    generated = run_dir / "derived/FigureS8_boundary_robustness/S8A_summary.csv"
+    reference = REFERENCE_ROOT / "FigureS8_boundary_robustness/S8A_summary.csv"
+    if not generated.exists():
+        return {"pass": False, "reason": "generated_file_missing"}
+    got, want = pd.read_csv(generated), pd.read_csv(reference)
+    keys = ["condition", "arm", "extent_bp", "gene"]
+    columns = ["mean_delta_liver", "mean_retention", "sd_retention"]
+    joined = got[keys + columns].merge(want[keys + columns], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+    results = {c: _numeric_summary(joined[f"{c}_generated"], joined[f"{c}_reference"], rtol=0.0, atol=1e-6, min_pearson=None) for c in columns}
+    return {"pass": len(joined) == 84 and all(bool(v["pass"]) for v in results.values()), "matched_rows": len(joined), "values": results}
+
+
+def compare_figs8b(run_dir: Path) -> dict[str, object]:
+    """S8B's own construction (shared armwise-scramble template + arm
+    interval, `run_single_arm_scramble.py`'s method -- not Figure 3G's
+    component-necessity shuffle) is genuinely fresh under both regimes.
+    Tolerance calibrated against a real fresh run (2026-08-08): max abs
+    diff 0.033 (ALL_FOLDS), 0.082 (FOLD_0)."""
+    results: dict[str, object] = {}
+    total_rows = 0
+    for model, name in [("ALL_FOLDS", "S8B_arm_audit_all_folds_summary.csv"), ("FOLD_0", "S8B_arm_audit_fold0_summary.csv")]:
+        generated = run_dir / "derived/FigureS8_boundary_robustness" / name
+        reference = REFERENCE_ROOT / "FigureS8_boundary_robustness" / name
+        if not generated.exists():
+            return {"pass": False, "reason": "generated_file_missing"}
+        got, want = pd.read_csv(generated), pd.read_csv(reference)
+        keys = ["condition", "arm", "gene"]
+        joined = got[keys + ["mean_retention"]].merge(want[keys + ["mean_retention"]], on=keys, suffixes=("_generated", "_reference"), validate="one_to_one")
+        total_rows += len(joined)
+        results[model] = _numeric_summary(joined.mean_retention_generated, joined.mean_retention_reference, rtol=0.0, atol=0.12, min_pearson=0.9)
+    return {"pass": total_rows == 36 and all(bool(v["pass"]) for v in results.values()), "matched_rows": total_rows, "values": results}
+
+
 COMPARATORS = {
     "1B": compare_fig1b, "1C": compare_fig1c, "1C-middle": compare_fig1c_middle,
     "1D": compare_fig1d, "1E": compare_fig1e, "1F": compare_fig1f,
@@ -1223,7 +1260,7 @@ COMPARATORS = {
     "S4A": compare_figs4a, "S4B": compare_figs4b, "S4C": compare_figs4c, "S4D": compare_figs4d,
     "S5A": compare_figs5a, "S5B": compare_figs5b, "S5C": compare_figs5c, "S5D": compare_figs5d,
     "S6A": compare_figs6a, "S6B": compare_figs6b, "S6C": compare_figs6c,
-    "S7": compare_figs7,
+    "S7": compare_figs7, "S8A": compare_figs8a, "S8B": compare_figs8b,
     "S9A": compare_figs9a, "S9B": compare_figs9b, "S9C": compare_figs9c, "S9D": compare_figs9d, "S9E": compare_figs9e,
     "S10A": compare_figs10a, "S10B": compare_figs10b,
 }
@@ -1383,6 +1420,8 @@ def write_report(run_dir: Path, comparison: dict[str, object] | None = None) -> 
         "S6B": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
         "S6C": ("Reuses S6A's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS;matched held-out"),
         "S7": ("GRCh38 + Figure 3B's own ISM-defined hotspot windows + AlphaGenome API", "ALL_FOLDS;FOLD_0"),
+        "S8A": ("Reuses Figure 3E's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
+        "S8B": ("GRCh38 + shared armwise-scramble template + AlphaGenome API", "ALL_FOLDS;FOLD_0"),
         "S9A": ("HPA v24.1 + GENCODE v46 + AlphaGenome API (genome-wide, ~20,000 genes)", "ALL_FOLDS"),
         "S9B": ("Reuses Figure 4B's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
         "S9C": ("Reuses Figure 4C's already-scored sequences (no new AlphaGenome calls)", "ALL_FOLDS"),
