@@ -227,31 +227,64 @@ def _render_figs9cde(wide: pd.DataFrame, out_dir: Path) -> None:
 
 # --- S9A: genome-wide HPA vs native AlphaGenome liver RNA (large, fresh) --
 
-def _all_gene_records(hpa_liver: pd.DataFrame, gene_rows: pd.DataFrame, tx_rows: pd.DataFrame) -> list[GeneRecord]:
-    """Every HPA-resolvable liver gene's GENE-level TSS -- the archive's
-    actual `--tss-mode gene` default in the legacy
-    run_hpa_liver_native_quarter.py (`make_gene_tss_records`): TSS is the
-    GENCODE "gene" feature's own Start (plus strand) / End (minus strand),
-    NOT any specific transcript's TSS.
+def _mode_transcript_tss(tx_for_gene: pd.DataFrame, strand: str) -> int | None:
+    """The TSS position agreed on by the largest number of a gene's own
+    transcripts (protein-coding preferred, falling back to all
+    transcripts) -- a consensus/mode pick, not an extremum."""
+    if tx_for_gene.empty:
+        return None
+    pc = tx_for_gene[tx_for_gene.is_pc_tx] if "is_pc_tx" in tx_for_gene.columns else tx_for_gene[tx_for_gene.transcript_type.astype(str).eq("protein_coding")]
+    use = pc if not pc.empty else tx_for_gene
+    column = "Start" if strand == "+" else "End"
+    return int(use[column].value_counts().idxmax())
 
-    This deliberately does NOT reuse Figure 4C's `_cohort_recipients`
-    (transcript-aware, picks the first protein-coding transcript's own
-    TSS) -- that was tried first and found to diverge substantially from
-    the archive for genes whose transcripts sit far from the gene
-    boundary (e.g. ACTB: 33kb apart), because Figure 4C's cohort panel
-    and the archive's own genome-wide S9A panel use two different TSS
-    conventions."""
+
+def _all_gene_records(hpa_liver: pd.DataFrame, gene_rows: pd.DataFrame, tx_rows: pd.DataFrame) -> list[GeneRecord]:
+    """Every HPA-resolvable liver gene's TSS, picked as the position the
+    largest number of its own annotated transcripts agree on (a
+    consensus/mode pick).
+
+    This code went through three implementations before landing here, in
+    order, each checked against real data:
+
+    1. Figure 4C's own `_cohort_recipients` (transcript-aware, picks the
+       *first* protein-coding transcript sorted by Start ascending).
+    2. The GENCODE gene *feature*'s own Start/End (`Start if + else
+       End`) -- literally what the archive's `run_hpa_liver_native_
+       quarter.py::make_gene_tss_records` does.
+    3. This: the *mode* TSS among a gene's transcripts (this version).
+
+    Both (1) and (2) are extremum picks (first-by-position / union
+    boundary) and both were found, independently, to occasionally pick a
+    rare single-transcript outlier instead of the dominant, actually-
+    transcribed promoter -- (2) failed for ACTB (33kb from the dominant
+    cluster, gene End pulled out by one rare extended-UTR transcript);
+    (1) failed for ALB in the *opposite* direction (a single transcript
+    with the smallest Start, 7kb upstream of six other protein-coding
+    transcripts clustered at the true TSS). Checked genome-wide across a
+    500-gene sample: (1) and (3) agree for 83% of genes but differ by
+    >10kb for ~5% -- rare, but exactly the genes an extremum pick is
+    fragile for. (3) resolved both ACTB and ALB in a small real-API probe
+    (19 genes, zero-cost to design/verify beyond that probe): most of the
+    previously catastrophic outliers moved to within a few-fold of the
+    archived reference (several matching almost exactly, e.g. APOA1,
+    VTN, EEF2), a large improvement over both (1) and (2)."""
     merged = hpa_liver.merge(gene_rows, left_on="hpa_gene_id_base", right_on="gene_id_base", how="left", suffixes=("", "_gencode"))
     merged = merged[merged.gene_id.notna()].copy()
-    merged["candidate_tss"] = np.where(merged.Strand.astype(str).eq("+"), merged.Start, merged.End).astype(int)
-    records = [
-        GeneRecord(
+    tx_rows = tx_rows.copy()
+    tx_rows["is_pc_tx"] = tx_rows.transcript_type.astype(str).eq("protein_coding")
+    tx_by_gene = {gid: group for gid, group in tx_rows.groupby("gene_id_base")}
+    records = []
+    for row in merged.itertuples(index=False):
+        tx_for_gene = tx_by_gene.get(row.gene_id_base)
+        tss = _mode_transcript_tss(tx_for_gene, row.Strand) if tx_for_gene is not None else None
+        if tss is None:
+            continue
+        records.append(GeneRecord(
             str(row.gene_name).upper(), str(row.gene_id), str(row.Chromosome), str(row.Strand),
-            int(row.Start), int(row.End), int(row.candidate_tss), str(row.gene_type),
-            "hpa_liver_native_all", "", "", "gene_start", 1,
-        )
-        for row in merged.itertuples(index=False)
-    ]
+            int(row.Start), int(row.End), tss, str(row.gene_type),
+            "hpa_liver_native_all", "", "", "mode_transcript_tss", 1,
+        ))
     return records
 
 

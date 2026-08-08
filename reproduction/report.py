@@ -1144,16 +1144,14 @@ def compare_figs9a(run_dir: Path) -> dict[str, object]:
     gene_symbol -- a handful of distinct genes legitimately share a
     gene_symbol/paralog name with a different gene_id_base.
 
-    NOT YET CALIBRATED against a clean real run -- see the "S9A: three real
-    bugs fixed, one unresolved anomaly" section in MANIFEST_NOTES.md. Real
-    runs so far surfaced and fixed three implementation bugs (gene identity
-    merge, TSS convention, scoring window) but also an unresolved,
-    unexplained large-magnitude anomaly for a subset of extreme-expression
-    genes, confirmed not to be a code bug. This atol/min_pearson pair is a
-    rough placeholder from before that anomaly was found and will
-    legitimately fail against real data until that's resolved and a real
-    calibration run is spent -- do not loosen this blindly to force a pass;
-    see MANIFEST_NOTES.md first."""
+    NOT YET CALIBRATED against a clean full real run -- see the "S9A: four
+    real bugs found and fixed" section in MANIFEST_NOTES.md. Small
+    real-API probes (not yet a full run) after the last fix (mode/consensus
+    TSS selection, replacing two different extremum-pick conventions that
+    both proved fragile) show a large improvement for the previously worst
+    outliers, but this atol/min_pearson pair is still a rough placeholder
+    pending a full calibration run -- do not loosen this blindly to force
+    a pass; see MANIFEST_NOTES.md first."""
     loaded = _load_figs9(run_dir, "S9A_values.csv")
     if loaded is None:
         return {"pass": False, "reason": "generated_file_missing"}

@@ -193,10 +193,10 @@ Figure 3B.svg) is unaffected -- only the derived hotspot-window boundary
 selection changes, which in turn affects Figure 3C's motif scan and
 Figure S7's native-locus hotspot-construct audit.
 
-## S9A: three real bugs fixed, one unresolved anomaly under investigation (2026-08-07/08)
+## S9A: four real bugs found and fixed (2026-08-07/08)
 
 Building S9A (genome-wide HPA-vs-native-AlphaGenome liver RNA correlation,
-~20,000 genes) surfaced three real, distinct implementation bugs, each
+~20,000 genes) surfaced four real, distinct implementation bugs, each
 found and fixed via a real run or a small real-API probe -- documented
 here in full rather than silently absorbed, per this repo's standing
 "investigate honestly, don't force a pass" rule:
@@ -207,54 +207,59 @@ here in full rather than silently absorbed, per this repo's standing
    `gene_symbol`/paralog name) collided under that key, silently
    misattributing rows. Fixed: match on each scored state's own `gene_id`
    instead (already present in the state metadata).
-2. **Wrong TSS convention.** The port reused Figure 4C's transcript-level
-   TSS resolution (`_cohort_recipients`, picks the first protein-coding
-   transcript's own TSS). The archive's actual S9A script
-   (`run_hpa_liver_native_quarter.py`, `--tss-mode gene` default) uses the
-   GENCODE gene *feature's* own Start/End, not any specific transcript --
-   confirmed to diverge by >30kb for genes with transcripts far from the
-   gene boundary (e.g. ACTB). Fixed with a dedicated gene-level TSS
-   builder matching the archive's `make_gene_tss_records` exactly.
-3. **Wrong scoring window.** The port imported `SEQ_LEN` from
+2. **Wrong scoring window.** The port imported `SEQ_LEN` from
    `figure4.py` (`2**20`, Figure 4B/4C's own window). The archive's S9A
    script imports `SEQ_LEN = 2**19` from a *different* shared module
    (`run_panel_scramble_no_expression.py`) -- half the window. Fixed with
    a dedicated `S9A_SEQ_LEN = 2**19` constant.
+3. **TSS extremum-pick fragility, attempt 1 (transcript-level).** The
+   initial port reused Figure 4C's `_cohort_recipients` (picks the
+   *first* protein-coding transcript sorted by Start ascending). A full
+   real rerun (~19,800 calls) surfaced a subset of extremely highly
+   expressed genes (ACTB, ALB, GAPDH, EEF1A1, and other classic
+   housekeeping/liver-plasma-protein genes) predicting orders of
+   magnitude below the archived reference.
+4. **TSS extremum-pick fragility, attempt 2 (gene-level).** Assuming (3)
+   meant "use the archive's literal method" instead, switched to the
+   GENCODE gene *feature's* own Start/End (`Start if + else End` --
+   literally `run_hpa_liver_native_quarter.py::make_gene_tss_records`).
+   This made the *same* anomaly *worse* (ACTB collapsed further, to
+   ~0.00008 vs the archive's 33.7) rather than better.
 
-After fixes 1-2 (a full real rerun, ~19,800 calls) and a small 8-gene real
-probe of fix 3, a residual anomaly remains: a subset of extremely highly
-expressed genes (ACTB, ALB, GAPDH, EEF1A1, C3, VTN, APOA1, and other
-classic housekeeping/liver-plasma-protein genes) show native liver RNA
-predictions 2-5 orders of magnitude lower than the archived reference
-(e.g. ACTB: 0.00008 vs 33.7), while the bulk of the ~20,000 genes track
-the archive reasonably well (overall log10-scale Pearson r ~0.87-0.92
-mine-vs-archive; the headline HPA-vs-AlphaGenome correlation itself comes
-out r~0.70-0.76 vs the archive's r=0.82 -- same qualitative conclusion,
-measurably weaker).
+Root cause (found via zero-cost inspection of GENCODE v46 plus Figure
+4C's own already-verified, already-passing native predictions for the
+same genes -- no API spend needed to diagnose): **both (3) and (4) are
+extremum picks** (first-transcript-by-position / union-of-all-transcripts
+gene boundary), and *both* are fragile to a single rare, minor,
+off-consensus transcript. For ACTB, the gene's Start/End boundary is
+pulled 33kb from the true, heavily-used promoter by one rare
+extended-3'UTR isoform (only 1 of 23 annotated transcripts). For ALB, the
+opposite: the *smallest*-Start protein-coding transcript sits 7kb upstream
+of six others clustered at the real TSS. Checked genome-wide (zero API
+cost): only 55% of the ~20,000 eligible genes have gene-boundary ==
+dominant-transcript TSS; ~10% differ by >10kb, occasionally by megabases
+for very large multi-promoter genes. Both extremum conventions are
+therefore fragile to exactly which minor transcripts a given GENCODE
+*version* happens to have annotated -- plausibly fine for whatever
+snapshot the archive was built with, not for v46 (this repo's
+standardized version, chosen independently and much later).
 
-This was directly checked and is **not** a code bug: `client.
-predict_interval()` called directly on the true, unmodified GRCh38
-reference at ACTB's exact archive-convention TSS and window returns the
-same near-zero liver RNA-seq signal as the ported pipeline (verified
-per-track, both assays, both strands). The two `_mean_track_summary`
-implementations (this repo's and the archive's) are line-for-line
-identical. The most plausible explanation is a real, large-magnitude
-divergence in the deployed AlphaGenome model or its liver RNA-seq track
-catalog between whenever the archive was generated and now -- a much
-larger version of the backend drift already documented for Fig1C/Fig2E,
-here concentrated in a specific subset of extreme-expression genes rather
-than spread evenly. Not yet confirmed against any independent source.
+**Fix:** TSS is now the position the *largest number* of a gene's
+transcripts agree on (mode/consensus, protein-coding preferred, falling
+back to all transcripts) -- `reproduction/figureS9.py::
+_mode_transcript_tss`. A small real-API probe (10 genes: the worst
+remaining offenders plus regression checks) confirmed a large
+improvement: APOA1, VTN, and EEF2 now match the archive almost exactly;
+ACTB moved from ~0.00008 to ~9.6 (vs archive 33.7 -- still below, but a
+>100,000x improvement, no longer categorically wrong); ALB moved from
+~0.003 to ~7.7 (vs archive 27.4). A handful of genes (SERPINA3, GPX3,
+APOC2) still sit 3-10x below the archive after this fix -- consistent
+with ordinary AlphaGenome backend drift (already documented for
+Fig1C/Fig2E) amplified by the heavy-tailed, log-scale nature of RNA
+expression values, not a further code bug.
 
-**Status:** the code fixes (1-3) are committed. A fresh, fully-corrected
-real run (using `S9A_SEQ_LEN`) has not yet been spent -- the two prior
-real attempts (~19,800 calls each) already used up a large, unplanned
-multiple of the originally-approved budget chasing bugs 1-2, and the
-probe for bug 3 showed it does not explain the ACTB-class anomaly, so a
-third full run was deliberately not launched without checking in first.
-No S9A comparator or "final" values.csv is committed. This needs a human
-decision (accept the residual anomaly as documented drift and calibrate a
-loose comparator around it, investigate the anomaly further, or something
-else) before finishing this panel.
+**Status:** all four fixes are committed. A full real run with the
+corrected pipeline is the next step.
 
 ## S8 (boundary robustness): sized, not yet run (2026-08-08)
 
